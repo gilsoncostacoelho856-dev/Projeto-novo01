@@ -1,5 +1,9 @@
 "use client";
 
+/** Espelho da tela "A receber", do outro lado do balcao. Como la, estes valores
+ *  NAO entram na sobra do mes: sao lembrete de divida, nao gasto que ja saiu da
+ *  conta — o gasto e lancado em /gastos no dia do pagamento. */
+
 import { useState } from "react";
 import { errorMessage, useFinance } from "@/lib/finance-context";
 import { formatBRL, formatDate, todayISO } from "@/lib/format";
@@ -17,19 +21,13 @@ import {
   cx,
 } from "@/components/ui";
 import { IconCheck, IconPencil, IconPlus, IconTrash } from "@/components/icons";
-import type { Receivable, ReceivableInput } from "@/lib/types";
+import type { Payable, PayableInput } from "@/lib/types";
 
-export default function ReceivablesPage() {
-  const {
-    receivableSummary,
-    addReceivable,
-    editReceivable,
-    markReceivableReceived,
-    removeReceivable,
-    loading,
-  } = useFinance();
+export default function PayablesPage() {
+  const { payableSummary, addPayable, editPayable, markPayablePaid, removePayable, loading } =
+    useFinance();
 
-  const { pending, received, pendingTotal, receivedTotal } = receivableSummary;
+  const { pending, paid, pendingTotal, paidTotal } = payableSummary;
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,56 +47,56 @@ export default function ReceivablesPage() {
     }
   }
 
-  function validate(input: ReceivableInput): string | null {
-    if (!input.person) return "Informe o nome de quem deve.";
+  function validate(input: PayableInput): string | null {
+    if (!input.person) return "Informe para quem você deve.";
     if (!(input.amount > 0)) return "Informe um valor maior que zero.";
     if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return "Informe uma data válida.";
     return null;
   }
 
-  function confirmRemoval(item: Receivable) {
+  function confirmRemoval(item: Payable) {
     if (
       !window.confirm(
-        `Excluir o valor a receber de "${item.person}"? Essa ação não pode ser desfeita.`,
+        `Excluir a conta de "${item.person}"? Essa ação não pode ser desfeita.`,
       )
     ) {
       return;
     }
-    void run(() => removeReceivable(item.id));
+    void run(() => removePayable(item.id));
   }
 
-  if (loading && pending.length === 0 && received.length === 0) {
+  if (loading && pending.length === 0 && paid.length === 0) {
     return <Skeleton className="h-96 w-full" />;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-ink">A receber</h1>
+      <h1 className="text-xl font-semibold text-ink">A pagar</h1>
 
       {error ? <Alert tone="critical">{error}</Alert> : null}
       {notice ? <Alert tone="good">{notice}</Alert> : null}
 
       {/* ------------------------------------------------------ numero-heroi */}
       <Card>
-        <p className="text-sm text-ink-2">Ainda a receber</p>
+        <p className="text-sm text-ink-2">Ainda a pagar</p>
         <p className="mt-1 text-[44px] font-semibold leading-none text-ink sm:text-5xl">
           {formatBRL(pendingTotal)}
         </p>
         <p className="mt-2 text-sm text-ink-2">
           {pending.length === 0
-            ? "Ninguém está te devendo."
-            : `${pending.length} cobrança${pending.length > 1 ? "s" : ""} em aberto`}
-          {received.length > 0 ? ` · ${formatBRL(receivedTotal)} já recebido` : ""}
+            ? "Você não está devendo nada."
+            : `${pending.length} conta${pending.length > 1 ? "s" : ""} em aberto`}
+          {paid.length > 0 ? ` · ${formatBRL(paidTotal)} já pago` : ""}
         </p>
       </Card>
 
       {/* ----------------------------------------------------- novo lancamento */}
       <Card as="div">
         <SectionTitle
-          title="Novo valor a receber"
-          hint="Anote quem te deve para não esquecer de cobrar."
+          title="Nova conta a pagar"
+          hint="Anote o que você deve para não perder o vencimento."
         />
-        <ReceivableForm
+        <PayableForm
           busy={busy}
           submitLabel="Adicionar"
           onSubmit={async (input) => {
@@ -110,8 +108,8 @@ export default function ReceivablesPage() {
             }
             let ok = false;
             await run(async () => {
-              await addReceivable(input);
-              setNotice(`${formatBRL(input.amount)} de ${input.person} registrado.`);
+              await addPayable(input);
+              setNotice(`${formatBRL(input.amount)} para ${input.person} registrado.`);
               ok = true;
             });
             return ok;
@@ -124,15 +122,15 @@ export default function ReceivablesPage() {
         <SectionTitle title={`Pendentes (${pending.length})`} />
         {pending.length === 0 ? (
           <EmptyState title="Nada pendente">
-            Quando alguém ficar te devendo, cadastre aqui e marque como recebido no
-            dia do pagamento.
+            Quando você ficar devendo alguém, cadastre aqui e marque como pago no dia
+            que quitar.
           </EmptyState>
         ) : (
           <ul className="divide-y divide-[var(--line)]">
             {pending.map((item) =>
               editingId === item.id ? (
                 <li key={item.id} className="py-3">
-                  <ReceivableForm
+                  <PayableForm
                     initial={item}
                     busy={busy}
                     submitLabel="Salvar"
@@ -146,7 +144,7 @@ export default function ReceivablesPage() {
                       }
                       let ok = false;
                       await run(async () => {
-                        await editReceivable(item.id, input);
+                        await editPayable(item.id, input);
                         setEditingId(null);
                         ok = true;
                       });
@@ -162,8 +160,8 @@ export default function ReceivablesPage() {
                   onEdit={() => setEditingId(item.id)}
                   onToggle={() =>
                     run(async () => {
-                      await markReceivableReceived(item.id, todayISO());
-                      setNotice(`${item.person} pagou ${formatBRL(item.amount)}.`);
+                      await markPayablePaid(item.id, todayISO());
+                      setNotice(`${formatBRL(item.amount)} pago para ${item.person}.`);
                     })
                   }
                   onRemove={() => confirmRemoval(item)}
@@ -174,15 +172,15 @@ export default function ReceivablesPage() {
         )}
       </Card>
 
-      {/* ------------------------------------------------------------ recebidos */}
-      {received.length > 0 ? (
+      {/* ---------------------------------------------------------------- pagos */}
+      {paid.length > 0 ? (
         <Card as="div">
           <SectionTitle
-            title={`Recebidos (${received.length})`}
-            hint={`${formatBRL(receivedTotal)} já entraram.`}
+            title={`Pagos (${paid.length})`}
+            hint={`${formatBRL(paidTotal)} já quitados.`}
           />
           <ul className="divide-y divide-[var(--line)]">
-            {received.map((item) => (
+            {paid.map((item) => (
               <Row
                 key={item.id}
                 item={item}
@@ -190,8 +188,8 @@ export default function ReceivablesPage() {
                 onEdit={() => setEditingId(item.id)}
                 onToggle={() =>
                   run(async () => {
-                    await markReceivableReceived(item.id, null);
-                    setNotice(`${item.person} voltou para os pendentes.`);
+                    await markPayablePaid(item.id, null);
+                    setNotice(`${item.person} voltou para as pendentes.`);
                   })
                 }
                 onRemove={() => confirmRemoval(item)}
@@ -211,19 +209,19 @@ function Row({
   onToggle,
   onRemove,
 }: {
-  item: Receivable;
+  item: Payable;
   busy: boolean;
   onEdit: () => void;
   onToggle: () => void;
   onRemove: () => void;
 }) {
-  const isReceived = item.receivedAt !== null;
+  const isPaid = item.paidAt !== null;
 
   return (
     <li
       className={cx(
         "flex flex-wrap items-center gap-x-3 gap-y-2 py-3",
-        isReceived && "opacity-70",
+        isPaid && "opacity-70",
       )}
     >
       <div className="min-w-0 flex-1">
@@ -231,10 +229,10 @@ function Row({
         <p className="mt-0.5 text-sm text-ink-2">
           {formatDate(item.date)}
           {item.description ? ` · ${item.description}` : ""}
-          {isReceived ? (
+          {isPaid ? (
             <span style={{ color: "var(--good-ink)" }}>
               {" "}
-              · recebido em {formatDate(item.receivedAt!)}
+              · pago em {formatDate(item.paidAt!)}
             </span>
           ) : null}
         </p>
@@ -242,7 +240,7 @@ function Row({
 
       <span
         className="shrink-0 font-semibold tabular-nums"
-        style={{ color: isReceived ? "var(--good-ink)" : "var(--ink-1)" }}
+        style={{ color: isPaid ? "var(--good-ink)" : "var(--ink-1)" }}
       >
         {formatBRL(item.amount)}
       </span>
@@ -250,18 +248,18 @@ function Row({
       {/* no celular os botoes descem para a propria linha, com espaco de sobra */}
       <div className="-mr-2 flex w-full shrink-0 items-center justify-end gap-1 sm:w-auto">
         <Button
-          variant={isReceived ? "ghost" : "secondary"}
+          variant={isPaid ? "ghost" : "secondary"}
           size="sm"
           onClick={onToggle}
           disabled={busy}
           className="whitespace-nowrap"
         >
-          {isReceived ? (
+          {isPaid ? (
             "Desfazer"
           ) : (
             <>
               <IconCheck className="h-4 w-4" />
-              Recebido
+              Pago
             </>
           )}
         </Button>
@@ -281,18 +279,18 @@ function Row({
   );
 }
 
-function ReceivableForm({
+function PayableForm({
   initial,
   busy,
   submitLabel,
   onSubmit,
   onCancel,
 }: {
-  initial?: Receivable;
+  initial?: Payable;
   busy: boolean;
   submitLabel: string;
   /** Retorna true quando salvou — o formulario novo se limpa nesse caso. */
-  onSubmit: (input: ReceivableInput) => Promise<boolean>;
+  onSubmit: (input: PayableInput) => Promise<boolean>;
   onCancel?: () => void;
 }) {
   const [person, setPerson] = useState(initial?.person ?? "");
@@ -329,20 +327,20 @@ function ReceivableForm({
     <form onSubmit={submit} noValidate className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">
-          <Field label="Pessoa" htmlFor={`person${suffix}`}>
+          <Field label="Pessoa ou empresa" htmlFor={`payee${suffix}`}>
             <Input
-              id={`person${suffix}`}
+              id={`payee${suffix}`}
               value={person}
               onChange={(e) => setPerson(e.target.value)}
               maxLength={60}
-              placeholder="Ex.: Marina"
+              placeholder="Ex.: Dentista"
             />
           </Field>
         </div>
         <div className="sm:w-44">
-          <Field label="Valor" htmlFor={`receivable-amount${suffix}`}>
+          <Field label="Valor" htmlFor={`payable-amount${suffix}`}>
             <CurrencyInput
-              id={`receivable-amount${suffix}`}
+              id={`payable-amount${suffix}`}
               value={amount}
               onChange={setAmount}
             />
@@ -352,9 +350,9 @@ function ReceivableForm({
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="sm:w-52">
-          <Field label="Data" htmlFor={`receivable-date${suffix}`}>
+          <Field label="Data" htmlFor={`payable-date${suffix}`}>
             <Input
-              id={`receivable-date${suffix}`}
+              id={`payable-date${suffix}`}
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -364,15 +362,15 @@ function ReceivableForm({
         <div className="flex-1">
           <Field
             label="Descrição"
-            htmlFor={`receivable-description${suffix}`}
+            htmlFor={`payable-description${suffix}`}
             hint="Opcional — do que se trata."
           >
             <Input
-              id={`receivable-description${suffix}`}
+              id={`payable-description${suffix}`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={120}
-              placeholder="Ex.: rachar o jantar"
+              placeholder="Ex.: segunda parcela"
             />
           </Field>
         </div>

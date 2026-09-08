@@ -15,6 +15,7 @@ a maior parte do uso acontece no celular.
 | **Painel** (`/dashboard`) | Total do mês, **sobra do mês** (renda − gastos), variação vs. mês anterior, medidor de gasto × limite por categoria e gráficos |
 | **Renda** (`/renda`) | Fontes de renda do mês (salário, freela, aluguel…), com opção de copiar as do mês anterior |
 | **A receber** (`/a-receber`) | Quem te deve, quanto, quando e por quê — com botão para marcar como recebido |
+| **A pagar** (`/a-pagar`) | Para quem você deve, quanto, quando e por quê — com botão para marcar como pago |
 | **Histórico** (`/historico`) | Lista filtrável por mês, categoria e busca livre; editar e excluir |
 | **Categorias** (`/categorias`) | Criar, renomear, trocar a cor e excluir (movendo os gastos para outra) |
 
@@ -23,8 +24,10 @@ Extras: **alertas** quando uma categoria passa de 80% e de 100% do limite,
 **categorias personalizáveis** e **tema claro/escuro** (segue o sistema e pode
 ser trocado no cabeçalho).
 
-Os valores **a receber** ficam de fora da sobra do mês de propósito: são um
-lembrete de cobrança, não dinheiro que já entrou.
+Os valores **a receber** e **a pagar** ficam de fora da sobra do mês de
+propósito: são lembretes de cobrança e de dívida, não dinheiro que já entrou nem
+gasto que já saiu da conta. Quando o dinheiro se move de verdade, o lançamento é
+feito em *Novo gasto* (ou em *Renda*).
 
 ## Rodando o projeto
 
@@ -61,7 +64,7 @@ src/
 │   ├── login/                # entrar / criar conta
 │   └── (app)/                # área autenticada (guarda de sessão + moldura)
 │       ├── dashboard/  gastos/  orcamento/  historico/  categorias/
-│       └── renda/  a-receber/
+│       └── renda/  a-receber/  a-pagar/
 ├── components/
 │   ├── AppShell.tsx          # nav inferior no celular, lateral no desktop
 │   ├── charts/               # BudgetMeter, DailyColumns, CategoryStack

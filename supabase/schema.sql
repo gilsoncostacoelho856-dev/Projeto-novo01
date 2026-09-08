@@ -94,6 +94,24 @@ create table if not exists public.receivables (
 create index if not exists receivables_user_idx
   on public.receivables (user_id, received_at, date desc, created_at desc);
 
+-- --------------------------------------------------------------- a pagar
+-- Espelho de `receivables`: o que o usuario deve. Tambem nao entra no total
+-- gasto nem na sobra do mes — o gasto e lancado em `expenses` quando pagar.
+create table if not exists public.payables (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  person      text not null check (char_length(btrim(person)) between 1 and 60),
+  amount      numeric(12, 2) not null check (amount > 0),
+  date        date not null,
+  description text not null default '' check (char_length(description) <= 120),
+  -- null enquanto estiver pendente; data do pagamento quando quitado
+  paid_at     date,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists payables_user_idx
+  on public.payables (user_id, paid_at, date desc, created_at desc);
+
 -- ==========================================================================
 --  Row Level Security
 -- ==========================================================================
@@ -102,12 +120,15 @@ alter table public.expenses    enable row level security;
 alter table public.budgets     enable row level security;
 alter table public.incomes     enable row level security;
 alter table public.receivables enable row level security;
+alter table public.payables    enable row level security;
 
 do $$
 declare
   t text;
 begin
-  foreach t in array array['categories', 'expenses', 'budgets', 'incomes', 'receivables'] loop
+  foreach t in array array[
+    'categories', 'expenses', 'budgets', 'incomes', 'receivables', 'payables'
+  ] loop
     execute format('drop policy if exists "%1$s_select" on public.%1$I', t);
     execute format('drop policy if exists "%1$s_insert" on public.%1$I', t);
     execute format('drop policy if exists "%1$s_update" on public.%1$I', t);

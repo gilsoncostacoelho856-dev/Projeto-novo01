@@ -75,6 +75,29 @@ export type ReceivableInput = {
   description: string;
 };
 
+/** Valor que voce deve a alguem. Espelho de `Receivable` e, como ele, fica de
+ *  fora da sobra do mes: e lembrete de divida, nao gasto que ja saiu da conta.
+ *  O gasto entra no app quando for pago, pela tela de gastos. */
+export type Payable = {
+  id: string;
+  /** Nome da pessoa ou empresa para quem voce deve. */
+  person: string;
+  /** Valor em reais, positivo. */
+  amount: number;
+  /** Data local no formato YYYY-MM-DD (vencimento ou quando pegou emprestado). */
+  date: string;
+  description: string;
+  /** Data YYYY-MM-DD em que voce pagou, ou null enquanto estiver pendente. */
+  paidAt: string | null;
+};
+
+export type PayableInput = {
+  person: string;
+  amount: number;
+  date: string;
+  description: string;
+};
+
 /** Erro com mensagem ja em portugues, pronta para exibir ao usuario. */
 export class AppError extends Error {}
 
@@ -122,6 +145,14 @@ export interface DataAdapter {
   /** `receivedAt` null volta o lancamento para pendente. */
   setReceivableReceived(id: string, receivedAt: string | null): Promise<void>;
   deleteReceivable(id: string): Promise<void>;
+
+  /** Todas as contas a pagar, pendentes primeiro. */
+  listPayables(): Promise<Payable[]>;
+  createPayable(input: PayableInput): Promise<Payable>;
+  updatePayable(id: string, input: PayableInput): Promise<void>;
+  /** `paidAt` null volta o lancamento para pendente. */
+  setPayablePaid(id: string, paidAt: string | null): Promise<void>;
+  deletePayable(id: string): Promise<void>;
 }
 
 export const DEFAULT_CATEGORIES: { name: string; colorIndex: number }[] = [

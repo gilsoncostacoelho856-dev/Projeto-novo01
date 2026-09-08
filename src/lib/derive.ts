@@ -1,6 +1,13 @@
 /** Calculos derivados do mes: gasto por categoria, situacao do limite e serie diaria. */
 
-import type { Budget, Category, Expense, Income, Receivable } from "@/lib/types";
+import type {
+  Budget,
+  Category,
+  Expense,
+  Income,
+  Payable,
+  Receivable,
+} from "@/lib/types";
 import { daysInMonth, elapsedDays, roundCents } from "@/lib/format";
 
 /** Fracao do limite a partir da qual o alerta amarelo aparece. */
@@ -135,9 +142,33 @@ export function summarizeReceivables(list: Receivable[]): ReceivableSummary {
   return {
     pending,
     received,
-    pendingTotal: roundCents(pending.reduce((sum, r) => sum + r.amount, 0)),
-    receivedTotal: roundCents(received.reduce((sum, r) => sum + r.amount, 0)),
+    pendingTotal: total(pending),
+    receivedTotal: total(received),
   };
+}
+
+export type PayableSummary = {
+  pending: Payable[];
+  paid: Payable[];
+  /** Soma do que voce ainda deve. */
+  pendingTotal: number;
+  /** Soma do que ja foi pago. */
+  paidTotal: number;
+};
+
+export function summarizePayables(list: Payable[]): PayableSummary {
+  const pending = list.filter((p) => p.paidAt === null);
+  const paid = list.filter((p) => p.paidAt !== null);
+  return {
+    pending,
+    paid,
+    pendingTotal: total(pending),
+    paidTotal: total(paid),
+  };
+}
+
+function total(list: { amount: number }[]): number {
+  return roundCents(list.reduce((sum, item) => sum + item.amount, 0));
 }
 
 /** Cor da paleta categorica para o slot da categoria (ordem fixa, 8 slots). */
