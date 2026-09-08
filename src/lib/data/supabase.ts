@@ -95,7 +95,7 @@ type IncomeRow = {
   id: string;
   source: string;
   amount: string | number;
-  month: string;
+  date: string;
 };
 type ReceivableRow = {
   id: string;
@@ -132,7 +132,7 @@ const toIncome = (r: IncomeRow): Income => ({
   id: r.id,
   source: r.source,
   amount: Number(r.amount),
-  month: r.month.slice(0, 7),
+  date: r.date,
 });
 
 const toReceivable = (r: ReceivableRow): Receivable => ({
@@ -313,11 +313,14 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   async listIncomes(month) {
+    const { start, end } = monthRange(month);
     const { data, error } = await db()
       .from("incomes")
-      .select("id, source, amount, month")
-      .eq("month", `${month}-01`)
-      .order("amount", { ascending: false });
+      .select("id, source, amount, date")
+      .gte("date", start)
+      .lte("date", end)
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
     if (error) fail(error);
     return (data as IncomeRow[]).map(toIncome);
   },
@@ -330,9 +333,9 @@ export const supabaseAdapter: DataAdapter = {
         user_id: userId,
         source: input.source,
         amount: roundCents(input.amount),
-        month: `${input.month}-01`,
+        date: input.date,
       })
-      .select("id, source, amount, month")
+      .select("id, source, amount, date")
       .single();
     if (error) fail(error);
     return toIncome(data as IncomeRow);
@@ -344,7 +347,7 @@ export const supabaseAdapter: DataAdapter = {
       .update({
         source: input.source,
         amount: roundCents(input.amount),
-        month: `${input.month}-01`,
+        date: input.date,
       })
       .eq("id", id);
     if (error) fail(error);

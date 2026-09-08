@@ -3,7 +3,7 @@
 /** Campo de dinheiro: o usuario digita so os numeros e o valor vai se formando
  *  da direita para a esquerda (1 2 3 -> R$ 1,23). Teclado numerico no celular. */
 
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { cx } from "@/components/ui";
 
 const centsFormat = new Intl.NumberFormat("pt-BR", {
@@ -15,24 +15,30 @@ function formatCents(cents: number): string {
   return centsFormat.format(cents / 100);
 }
 
-export function CurrencyInput({
-  id,
-  value,
-  onChange,
-  placeholder = "0,00",
-  autoFocus,
-  className,
-  "aria-describedby": describedBy,
-}: {
-  id: string;
-  /** Valor em reais; 0 mostra o campo vazio. */
-  value: number;
-  onChange: (value: number) => void;
-  placeholder?: string;
-  autoFocus?: boolean;
-  className?: string;
-  "aria-describedby"?: string;
-}) {
+export const CurrencyInput = forwardRef<
+  HTMLInputElement,
+  {
+    id: string;
+    /** Valor em reais; 0 mostra o campo vazio. */
+    value: number;
+    onChange: (value: number) => void;
+    placeholder?: string;
+    autoFocus?: boolean;
+    className?: string;
+    "aria-describedby"?: string;
+  }
+>(function CurrencyInput(
+  {
+    id,
+    value,
+    onChange,
+    placeholder = "0,00",
+    autoFocus,
+    className,
+    "aria-describedby": describedBy,
+  },
+  ref,
+) {
   const [text, setText] = useState(() => (value > 0 ? formatCents(Math.round(value * 100)) : ""));
 
   // Reflete mudancas vindas de fora (ex.: carregar um gasto para editar).
@@ -51,6 +57,7 @@ export function CurrencyInput({
       </span>
       <input
         id={id}
+        ref={ref}
         // "decimal" abre o teclado numerico sem esconder a virgula
         inputMode="decimal"
         autoFocus={autoFocus}
@@ -72,4 +79,4 @@ export function CurrencyInput({
       />
     </div>
   );
-}
+});

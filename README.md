@@ -13,7 +13,7 @@ a maior parte do uso acontece no celular.
 | **Novo gasto** (`/gastos`) | Valor, categoria, data e descrição — também edita um gasto existente |
 | **Orçamento** (`/orcamento`) | Limite mensal por categoria, com opção de copiar os limites do mês anterior |
 | **Painel** (`/dashboard`) | Total do mês, **sobra do mês** (renda − gastos), variação vs. mês anterior, medidor de gasto × limite por categoria e gráficos |
-| **Renda** (`/renda`) | Fontes de renda do mês (salário, freela, aluguel…), com opção de copiar as do mês anterior |
+| **Renda** (`/renda`) | Um lançamento por ganho, com data — vários por dia se precisar; agrupados por dia, somados por fonte e pelo mês, com opção de repetir as fontes fixas do mês anterior |
 | **A receber** (`/a-receber`) | Quem te deve, quanto, quando e por quê — com botão para marcar como recebido |
 | **A pagar** (`/a-pagar`) | Para quem você deve, quanto, quando e por quê — com botão para marcar como pago |
 | **Histórico** (`/historico`) | Lista filtrável por mês, categoria e busca livre; editar e excluir |
@@ -23,6 +23,12 @@ Extras: **alertas** quando uma categoria passa de 80% e de 100% do limite,
 **destaque em vermelho** quando os gastos do mês passam da renda,
 **categorias personalizáveis** e **tema claro/escuro** (segue o sistema e pode
 ser trocado no cabeçalho).
+
+A renda tem a **mesma forma de um gasto**: cada ganho é um lançamento com data.
+Quem recebe todo dia (motorista de app, autônomo) lança um por dia — ou vários no
+mesmo dia — e o mês é a soma deles; quem tem renda fixa lança uma vez e usa
+*Copiar de \<mês\>* no mês seguinte, que repete só as **fontes fixas** (as que
+tiveram um único lançamento no mês passado).
 
 Os valores **a receber** e **a pagar** ficam de fora da sobra do mês de
 propósito: são lembretes de cobrança e de dívida, não dinheiro que já entrou nem

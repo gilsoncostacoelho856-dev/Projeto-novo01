@@ -29,11 +29,23 @@ export type CategorySummary = {
   share: number;
 };
 
+export type IncomeSourceSummary = {
+  source: string;
+  /** Soma dos lancamentos da fonte no mes. */
+  total: number;
+  /** Quantos lancamentos a fonte teve no mes. */
+  count: number;
+  /** Participacao na renda do mes, de 0 a 1. */
+  share: number;
+};
+
 export type MonthSummary = {
   rows: CategorySummary[];
   totalSpent: number;
-  /** Soma das fontes de renda do mes. */
+  /** Soma de todos os lancamentos de renda do mes. */
   totalIncome: number;
+  /** Renda agrupada por fonte, da maior para a menor. */
+  incomeSources: IncomeSourceSummary[];
   /** Renda total - gasto total. Negativo = gastou mais do que entrou. */
   leftover: number;
   /** gasto / renda, ou null quando nao ha renda cadastrada no mes. */
@@ -110,10 +122,33 @@ export function summarize(
 
   const totalIncome = roundCents(incomes.reduce((sum, i) => sum + i.amount, 0));
 
+  // Agrupa por nome de fonte, ignorando caixa ("uber" e "Uber" sao a mesma), e
+  // mantem a grafia do lancamento mais recente para exibir.
+  const bySource = new Map<string, IncomeSourceSummary>();
+  for (const income of incomes) {
+    const key = income.source.trim().toLowerCase();
+    const current = bySource.get(key);
+    if (current) {
+      current.total = roundCents(current.total + income.amount);
+      current.count += 1;
+    } else {
+      bySource.set(key, {
+        source: income.source,
+        total: roundCents(income.amount),
+        count: 1,
+        share: 0,
+      });
+    }
+  }
+  const incomeSources = [...bySource.values()]
+    .map((s) => ({ ...s, share: totalIncome > 0 ? s.total / totalIncome : 0 }))
+    .sort((a, b) => b.total - a.total);
+
   return {
     rows,
     totalSpent,
     totalIncome,
+    incomeSources,
     leftover: roundCents(totalIncome - totalSpent),
     spentRatio: totalIncome > 0 ? totalSpent / totalIncome : null,
     totalLimit,

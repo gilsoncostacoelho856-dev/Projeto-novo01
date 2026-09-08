@@ -153,10 +153,26 @@ function seedStore(): Store {
   }
   store.expenses[user.id] = expenses;
 
-  store.incomes[user.id] = [thisMonth, lastMonth].flatMap((month) => [
-    { id: uid(), source: "Salário", amount: 4200, month },
-    { id: uid(), source: "Freela", amount: 950, month },
-  ]);
+  // Uma fonte fixa (salario, um lancamento) e uma variavel (freelas espalhados
+  // pelo mes) — mostra que a renda agora e somada por lancamento, como o gasto.
+  const freelas = [220, 180, 250, 150, 150];
+  store.incomes[user.id] = [lastMonth, thisMonth].flatMap((month) => {
+    const [y, m] = month.split("-").map(Number);
+    // no mes corrente so ha dias ate hoje: espalha os freelas no que ja passou
+    const lastDay =
+      month === thisMonth ? Number(toISODate(new Date()).slice(8, 10)) : 28;
+    const on = (day: number) =>
+      toISODate(new Date(y, m - 1, Math.min(Math.max(day, 1), lastDay)));
+    return [
+      { id: uid(), source: "Salário", amount: 4200, date: on(5) },
+      ...freelas.map((amount, i) => ({
+        id: uid(),
+        source: "Freela",
+        amount,
+        date: on(Math.round(((i + 1) / (freelas.length + 1)) * lastDay)),
+      })),
+    ];
+  });
 
   const [cy, cm] = thisMonth.split("-").map(Number);
   store.receivables[user.id] = [
@@ -387,9 +403,10 @@ export const demoAdapter: DataAdapter = {
 
   async listIncomes(month) {
     const userId = requireUserId();
-    return (readStore().incomes[userId] ?? [])
-      .filter((i) => i.month === month)
-      .sort((a, b) => b.amount - a.amount);
+    const list = (readStore().incomes[userId] ?? []).filter(
+      (i) => monthOf(i.date) === month,
+    );
+    return [...list].sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
   },
 
   async createIncome(input: IncomeInput) {

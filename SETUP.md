@@ -29,7 +29,9 @@ Security em todas e configura o gatilho que dá as sete categorias padrão a cad
 conta nova.
 
 > Já tinha o banco criado numa versão anterior do app? Rode o arquivo de novo:
-> ele só acrescenta as tabelas que faltam e mantém seus dados.
+> ele acrescenta as tabelas que faltam e mantém seus dados. Se a sua tabela
+> `incomes` ainda guardava só o mês, o script renomeia a coluna para `date`
+> preservando os valores — cada renda vira um lançamento no dia 1 daquele mês.
 
 > Pode rodar de novo sem medo: o script é idempotente.
 

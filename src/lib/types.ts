@@ -37,21 +37,23 @@ export type ExpenseInput = {
   description: string;
 };
 
-/** Uma fonte de renda de um mes (salario, freela, aluguel recebido...). */
+/** Um ganho, no dia em que entrou. Mesma forma de um gasto: quem recebe todo
+ *  dia (motorista de app, autonomo) lanca um por dia — ou varios no mesmo dia —
+ *  e o mes e so a soma deles. Quem tem renda fixa lanca uma vez por mes. */
 export type Income = {
   id: string;
-  /** Nome da fonte, ex.: "Salário". */
+  /** Nome da fonte, ex.: "Salário", "Uber". */
   source: string;
   /** Valor em reais, positivo. */
   amount: number;
-  /** Mes de referencia no formato YYYY-MM. */
-  month: string;
+  /** Data local no formato YYYY-MM-DD. */
+  date: string;
 };
 
 export type IncomeInput = {
   source: string;
   amount: number;
-  month: string;
+  date: string;
 };
 
 /** Valor que alguem te deve. Nao entra no calculo da sobra do mes. */
@@ -132,7 +134,7 @@ export interface DataAdapter {
   /** Grava o limite; `limitAmount <= 0` remove o orcamento da categoria. */
   setBudget(categoryId: string, month: string, limitAmount: number): Promise<void>;
 
-  /** Fontes de renda de um mes YYYY-MM, da maior para a menor. */
+  /** Ganhos de um mes YYYY-MM, do mais recente para o mais antigo. */
   listIncomes(month: string): Promise<Income[]>;
   createIncome(input: IncomeInput): Promise<Income>;
   updateIncome(id: string, input: IncomeInput): Promise<void>;

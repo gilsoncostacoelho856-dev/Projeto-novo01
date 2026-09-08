@@ -11,7 +11,7 @@ import {
 } from "react";
 import { getAdapter, isSupabaseConfigured } from "@/lib/data";
 import { onAuthChange } from "@/lib/data/supabase";
-import { addMonths, currentMonth } from "@/lib/format";
+import { addMonths, currentMonth, daysInMonth } from "@/lib/format";
 import {
   summarize,
   summarizePayables,
@@ -89,10 +89,10 @@ type FinanceValue = {
   ) => Promise<void>;
   removeCategory: (id: string, moveTo: string | null) => Promise<void>;
 
-  addIncome: (source: string, amount: number) => Promise<void>;
+  addIncome: (input: IncomeInput) => Promise<void>;
   editIncome: (id: string, input: IncomeInput) => Promise<void>;
   removeIncome: (id: string) => Promise<void>;
-  /** Copia para o mes atual as fontes que ainda nao existem nele. */
+  /** Repete neste mes as fontes fixas do mes anterior. Ver a implementacao. */
   copyIncomesFromPreviousMonth: () => Promise<number>;
 
   addReceivable: (input: ReceivableInput) => Promise<void>;
@@ -276,8 +276,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       await load();
     },
 
-    addIncome: async (source, amount) => {
-      await adapter.createIncome({ source, amount, month });
+    addIncome: async (input) => {
+      await adapter.createIncome(input);
       await load();
     },
     editIncome: async (id, input) => {
@@ -288,19 +288,34 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       await adapter.deleteIncome(id);
       await load();
     },
+    /** Repete so o que parece renda fixa: fontes que tiveram UM lancamento no
+     *  mes anterior e ainda nao aparecem neste. Assim quem lanca "Uber" todo
+     *  dia nao ganha trinta linhas de uma vez, e o salario volta sozinho —
+     *  no mesmo dia do mes, encurtado quando o mes e mais curto. */
     copyIncomesFromPreviousMonth: async () => {
       const previous = await adapter.listIncomes(addMonths(month, -1));
-      const existing = new Set(incomes.map((i) => i.source.toLowerCase()));
-      const missing = previous.filter((i) => !existing.has(i.source.toLowerCase()));
-      for (const income of missing) {
+      const occurrences = new Map<string, number>();
+      for (const income of previous) {
+        const key = income.source.trim().toLowerCase();
+        occurrences.set(key, (occurrences.get(key) ?? 0) + 1);
+      }
+      const existing = new Set(incomes.map((i) => i.source.trim().toLowerCase()));
+      const fixed = previous.filter((i) => {
+        const key = i.source.trim().toLowerCase();
+        return occurrences.get(key) === 1 && !existing.has(key);
+      });
+
+      const lastDay = daysInMonth(month);
+      for (const income of fixed) {
+        const day = Math.min(Number(income.date.slice(8, 10)), lastDay);
         await adapter.createIncome({
           source: income.source,
           amount: income.amount,
-          month,
+          date: `${month}-${String(day).padStart(2, "0")}`,
         });
       }
       await load();
-      return missing.length;
+      return fixed.length;
     },
 
     addReceivable: async (input) => {
