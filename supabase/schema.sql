@@ -1,0 +1,123 @@
+-- ============================================================================
+--  Minhas Financas — esquema do banco (Supabase / PostgreSQL)
+--
+--  Como usar:
+--    1. abra seu projeto em https://supabase.com
+--    2. va em "SQL Editor" -> "New query"
+--    3. cole TODO este arquivo e clique em "Run"
+--
+--  Pode rodar mais de uma vez: tudo aqui e idempotente.
+--
+--  Seguranca: as tres tabelas ficam com Row Level Security ligada e cada
+--  politica compara `auth.uid()` com `user_id`. Ou seja, mesmo usando a chave
+--  publica (anon) no navegador, um usuario so enxerga e altera as proprias
+--  linhas.
+-- ============================================================================
+
+create extension if not exists pgcrypto;
+
+-- ------------------------------------------------------------------ categorias
+create table if not exists public.categories (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  name        text not null check (char_length(btrim(name)) between 1 and 40),
+  -- slot da paleta categorica do app (8 cores, ordem fixa)
+  color_index smallint not null default 0 check (color_index between 0 and 7),
+  created_at  timestamptz not null default now(),
+  unique (user_id, name)
+);
+
+-- --------------------------------------------------------------------- gastos
+create table if not exists public.expenses (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  -- "restrict": apagar uma categoria com gastos exige mover os gastos antes,
+  -- o que e exatamente o que a tela de categorias faz.
+  category_id uuid not null references public.categories (id) on delete restrict,
+  amount      numeric(12, 2) not null check (amount > 0),
+  date        date not null,
+  description text not null default '' check (char_length(description) <= 120),
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists expenses_user_date_idx
+  on public.expenses (user_id, date desc, created_at desc);
+
+create index if not exists expenses_category_idx
+  on public.expenses (category_id);
+
+-- ----------------------------------------------------------------- orcamentos
+create table if not exists public.budgets (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  category_id  uuid not null references public.categories (id) on delete cascade,
+  -- sempre o primeiro dia do mes de referencia (ex.: 2026-09-01)
+  month        date not null check (extract(day from month) = 1),
+  limit_amount numeric(12, 2) not null check (limit_amount > 0),
+  created_at   timestamptz not null default now(),
+  unique (user_id, category_id, month)
+);
+
+create index if not exists budgets_user_month_idx
+  on public.budgets (user_id, month);
+
+-- ==========================================================================
+--  Row Level Security
+-- ==========================================================================
+alter table public.categories enable row level security;
+alter table public.expenses   enable row level security;
+alter table public.budgets    enable row level security;
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['categories', 'expenses', 'budgets'] loop
+    execute format('drop policy if exists "%1$s_select" on public.%1$I', t);
+    execute format('drop policy if exists "%1$s_insert" on public.%1$I', t);
+    execute format('drop policy if exists "%1$s_update" on public.%1$I', t);
+    execute format('drop policy if exists "%1$s_delete" on public.%1$I', t);
+
+    execute format(
+      'create policy "%1$s_select" on public.%1$I for select
+         using (auth.uid() = user_id)', t);
+    execute format(
+      'create policy "%1$s_insert" on public.%1$I for insert
+         with check (auth.uid() = user_id)', t);
+    execute format(
+      'create policy "%1$s_update" on public.%1$I for update
+         using (auth.uid() = user_id) with check (auth.uid() = user_id)', t);
+    execute format(
+      'create policy "%1$s_delete" on public.%1$I for delete
+         using (auth.uid() = user_id)', t);
+  end loop;
+end $$;
+
+-- ==========================================================================
+--  Categorias padrao para cada conta nova
+-- ==========================================================================
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.categories (user_id, name, color_index)
+  values
+    (new.id, 'Alimentação', 0),
+    (new.id, 'Transporte',  1),
+    (new.id, 'Moradia',     2),
+    (new.id, 'Lazer',       3),
+    (new.id, 'Saúde',       4),
+    (new.id, 'Educação',    5),
+    (new.id, 'Outros',      6)
+  on conflict (user_id, name) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
