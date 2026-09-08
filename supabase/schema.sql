@@ -8,7 +8,7 @@
 --
 --  Pode rodar mais de uma vez: tudo aqui e idempotente.
 --
---  Seguranca: as tres tabelas ficam com Row Level Security ligada e cada
+--  Seguranca: todas as tabelas ficam com Row Level Security ligada e cada
 --  politica compara `auth.uid()` com `user_id`. Ou seja, mesmo usando a chave
 --  publica (anon) no navegador, um usuario so enxerga e altera as proprias
 --  linhas.
@@ -61,18 +61,53 @@ create table if not exists public.budgets (
 create index if not exists budgets_user_month_idx
   on public.budgets (user_id, month);
 
+-- ----------------------------------------------------------------- rendas
+-- Uma linha por fonte de renda de cada mes (salario, freela, aluguel...).
+create table if not exists public.incomes (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  source     text not null check (char_length(btrim(source)) between 1 and 40),
+  amount     numeric(12, 2) not null check (amount > 0),
+  -- sempre o primeiro dia do mes de referencia (ex.: 2026-09-01)
+  month      date not null check (extract(day from month) = 1),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists incomes_user_month_idx
+  on public.incomes (user_id, month);
+
+-- ------------------------------------------------------------- a receber
+-- Valores que outras pessoas devem ao usuario. Nao entram no total gasto
+-- nem na sobra do mes: sao so um lembrete de cobranca.
+create table if not exists public.receivables (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  person      text not null check (char_length(btrim(person)) between 1 and 60),
+  amount      numeric(12, 2) not null check (amount > 0),
+  date        date not null,
+  description text not null default '' check (char_length(description) <= 120),
+  -- null enquanto estiver pendente; data do pagamento quando recebido
+  received_at date,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists receivables_user_idx
+  on public.receivables (user_id, received_at, date desc, created_at desc);
+
 -- ==========================================================================
 --  Row Level Security
 -- ==========================================================================
-alter table public.categories enable row level security;
-alter table public.expenses   enable row level security;
-alter table public.budgets    enable row level security;
+alter table public.categories  enable row level security;
+alter table public.expenses    enable row level security;
+alter table public.budgets     enable row level security;
+alter table public.incomes     enable row level security;
+alter table public.receivables enable row level security;
 
 do $$
 declare
   t text;
 begin
-  foreach t in array array['categories', 'expenses', 'budgets'] loop
+  foreach t in array array['categories', 'expenses', 'budgets', 'incomes', 'receivables'] loop
     execute format('drop policy if exists "%1$s_select" on public.%1$I', t);
     execute format('drop policy if exists "%1$s_insert" on public.%1$I', t);
     execute format('drop policy if exists "%1$s_update" on public.%1$I', t);

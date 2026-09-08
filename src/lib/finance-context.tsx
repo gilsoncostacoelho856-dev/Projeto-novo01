@@ -12,7 +12,12 @@ import {
 import { getAdapter, isSupabaseConfigured } from "@/lib/data";
 import { onAuthChange } from "@/lib/data/supabase";
 import { addMonths, currentMonth } from "@/lib/format";
-import { summarize, type MonthSummary } from "@/lib/derive";
+import {
+  summarize,
+  summarizeReceivables,
+  type MonthSummary,
+  type ReceivableSummary,
+} from "@/lib/derive";
 import {
   AppError,
   type AuthUser,
@@ -20,6 +25,10 @@ import {
   type Category,
   type Expense,
   type ExpenseInput,
+  type Income,
+  type IncomeInput,
+  type Receivable,
+  type ReceivableInput,
 } from "@/lib/types";
 
 export function errorMessage(err: unknown): string {
@@ -40,9 +49,13 @@ type FinanceValue = {
   categories: Category[];
   expenses: Expense[];
   budgets: Budget[];
+  incomes: Income[];
+  /** Todos os valores a receber (pendentes e recebidos), sem recorte de mes. */
+  receivables: Receivable[];
   /** Gastos do mes anterior, usados na variacao do painel. */
   previousTotal: number;
   summary: MonthSummary;
+  receivableSummary: ReceivableSummary;
 
   loading: boolean;
   error: string | null;
@@ -68,6 +81,17 @@ type FinanceValue = {
     patch: { name?: string; colorIndex?: number },
   ) => Promise<void>;
   removeCategory: (id: string, moveTo: string | null) => Promise<void>;
+
+  addIncome: (source: string, amount: number) => Promise<void>;
+  editIncome: (id: string, input: IncomeInput) => Promise<void>;
+  removeIncome: (id: string) => Promise<void>;
+  /** Copia para o mes atual as fontes que ainda nao existem nele. */
+  copyIncomesFromPreviousMonth: () => Promise<number>;
+
+  addReceivable: (input: ReceivableInput) => Promise<void>;
+  editReceivable: (id: string, input: ReceivableInput) => Promise<void>;
+  markReceivableReceived: (id: string, receivedAt: string | null) => Promise<void>;
+  removeReceivable: (id: string) => Promise<void>;
 };
 
 const FinanceContext = createContext<FinanceValue | null>(null);
@@ -82,6 +106,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [receivables, setReceivables] = useState<Receivable[]>([]);
   const [previousTotal, setPreviousTotal] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -111,16 +137,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const [cats, exps, buds, prev] = await Promise.all([
+      const [cats, exps, buds, incs, recs, prev] = await Promise.all([
         adapter.listCategories(),
         adapter.listExpenses(month),
         adapter.listBudgets(month),
+        adapter.listIncomes(month),
+        adapter.listReceivables(),
         adapter.listExpenses(addMonths(month, -1)),
       ]);
       if (id !== requestId.current) return;
       setCategories(cats);
       setExpenses(exps);
       setBudgets(buds);
+      setIncomes(incs);
+      setReceivables(recs);
       setPreviousTotal(prev.reduce((sum, e) => sum + e.amount, 0));
     } catch (err) {
       if (id !== requestId.current) return;
@@ -135,6 +165,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       setCategories([]);
       setExpenses([]);
       setBudgets([]);
+      setIncomes([]);
+      setReceivables([]);
       setPreviousTotal(0);
       setLoading(false);
       return;
@@ -143,8 +175,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, [user, load]);
 
   const summary = useMemo(
-    () => summarize(month, categories, expenses, budgets),
-    [month, categories, expenses, budgets],
+    () => summarize(month, categories, expenses, budgets, incomes),
+    [month, categories, expenses, budgets, incomes],
+  );
+
+  const receivableSummary = useMemo(
+    () => summarizeReceivables(receivables),
+    [receivables],
   );
 
   const value: FinanceValue = {
@@ -156,8 +193,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     categories,
     expenses,
     budgets,
+    incomes,
+    receivables,
     previousTotal,
     summary,
+    receivableSummary,
     loading,
     error,
     reload: load,
@@ -213,6 +253,50 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     },
     removeCategory: async (id, moveTo) => {
       await adapter.deleteCategory(id, moveTo);
+      await load();
+    },
+
+    addIncome: async (source, amount) => {
+      await adapter.createIncome({ source, amount, month });
+      await load();
+    },
+    editIncome: async (id, input) => {
+      await adapter.updateIncome(id, input);
+      await load();
+    },
+    removeIncome: async (id) => {
+      await adapter.deleteIncome(id);
+      await load();
+    },
+    copyIncomesFromPreviousMonth: async () => {
+      const previous = await adapter.listIncomes(addMonths(month, -1));
+      const existing = new Set(incomes.map((i) => i.source.toLowerCase()));
+      const missing = previous.filter((i) => !existing.has(i.source.toLowerCase()));
+      for (const income of missing) {
+        await adapter.createIncome({
+          source: income.source,
+          amount: income.amount,
+          month,
+        });
+      }
+      await load();
+      return missing.length;
+    },
+
+    addReceivable: async (input) => {
+      await adapter.createReceivable(input);
+      await load();
+    },
+    editReceivable: async (id, input) => {
+      await adapter.updateReceivable(id, input);
+      await load();
+    },
+    markReceivableReceived: async (id, receivedAt) => {
+      await adapter.setReceivableReceived(id, receivedAt);
+      await load();
+    },
+    removeReceivable: async (id) => {
+      await adapter.deleteReceivable(id);
       await load();
     },
   };

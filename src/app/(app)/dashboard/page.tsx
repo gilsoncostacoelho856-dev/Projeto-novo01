@@ -16,12 +16,24 @@ import { CategoryStack } from "@/components/charts/CategoryStack";
 import { DailyColumns } from "@/components/charts/DailyColumns";
 import { MonthPicker } from "@/components/MonthPicker";
 import { Alert, Button, Card, EmptyState, SectionTitle, Skeleton } from "@/components/ui";
-import { IconAlert, IconPlus, IconTarget } from "@/components/icons";
+import { IconAlert, IconPlus, IconTarget, IconTrendUp } from "@/components/icons";
 
 export default function DashboardPage() {
   const { month, summary, previousTotal, loading, error, categories } = useFinance();
-  const { totalSpent, totalLimit, totalRemaining, budgetRatio, rows, over, warning } =
-    summary;
+  const {
+    totalSpent,
+    totalIncome,
+    leftover,
+    spentRatio,
+    totalLimit,
+    totalRemaining,
+    budgetRatio,
+    rows,
+    over,
+    warning,
+  } = summary;
+
+  const negative = totalIncome > 0 && leftover < 0;
 
   const delta = previousTotal > 0 ? (totalSpent - previousTotal) / previousTotal : null;
   const withBudget = rows.filter((r) => r.limit !== null);
@@ -43,6 +55,15 @@ export default function DashboardPage() {
         </>
       ) : (
         <>
+          {negative ? (
+            <Alert tone="critical" title="Você gastou mais do que ganhou neste mês">
+              {formatBRL(Math.abs(leftover))} acima da renda de {formatMonth(month)}.{" "}
+              <Link href="/renda" className="underline">
+                Rever renda
+              </Link>
+            </Alert>
+          ) : null}
+
           {over.length > 0 ? (
             <Alert
               tone="critical"
@@ -131,6 +152,97 @@ export default function DashboardPage() {
                 </p>
               </div>
             ) : null}
+          </Card>
+
+          {/* ------------------------------------------------- sobra do mes */}
+          {/* a borda esquerda grossa repete o padrao dos alertas criticos */}
+          <Card
+            style={negative ? { borderLeft: "4px solid var(--critical)" } : undefined}
+          >
+            {totalIncome === 0 ? (
+              <EmptyState
+                title="Cadastre sua renda do mês"
+                action={
+                  <Link href="/renda">
+                    <Button>
+                      <IconTrendUp className="h-4 w-4" />
+                      Cadastrar renda
+                    </Button>
+                  </Link>
+                }
+              >
+                Com a renda de {formatMonth(month)} cadastrada, o painel mostra quanto
+                sobra depois dos gastos.
+              </EmptyState>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-ink-2">Sobra do mês</p>
+                  {negative ? (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+                      style={{
+                        color: "var(--critical)",
+                        background:
+                          "color-mix(in oklab, var(--critical) 14%, var(--surface))",
+                      }}
+                    >
+                      <IconAlert className="h-3.5 w-3.5" />
+                      No vermelho
+                    </span>
+                  ) : null}
+                </div>
+
+                <p
+                  className="mt-1 text-[40px] font-semibold leading-none sm:text-[44px]"
+                  style={{
+                    color: negative ? "var(--critical)" : "var(--good-ink)",
+                  }}
+                >
+                  {negative ? `− ${formatBRL(Math.abs(leftover))}` : formatBRL(leftover)}
+                </p>
+
+                <p className="mt-2 text-sm text-ink-2">
+                  Renda{" "}
+                  <span className="font-semibold text-ink">{formatBRL(totalIncome)}</span>{" "}
+                  − gastos{" "}
+                  <span className="font-semibold text-ink">{formatBRL(totalSpent)}</span>
+                </p>
+
+                {/* quanto da renda ja foi consumido pelos gastos */}
+                <div
+                  className="mt-4 h-2.5 w-full overflow-hidden rounded"
+                  style={{
+                    background: `color-mix(in oklab, ${negative ? "var(--critical)" : "var(--good)"} 20%, var(--surface))`,
+                  }}
+                  role="img"
+                  aria-label={`${formatBRL(totalSpent)} gastos de ${formatBRL(totalIncome)} de renda`}
+                >
+                  <div
+                    className="h-full rounded transition-[width] duration-300"
+                    style={{
+                      width: `${Math.min(spentRatio ?? 0, 1) * 100}%`,
+                      background: negative ? "var(--critical)" : "var(--accent)",
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-sm text-ink-2">
+                  {negative ? (
+                    <span className="flex items-center gap-1.5 text-[var(--critical)]">
+                      <IconAlert className="h-4 w-4" />
+                      {formatBRL(Math.abs(leftover))} acima da renda do mês
+                    </span>
+                  ) : (
+                    <>
+                      Os gastos consumiram {formatPercent(spentRatio ?? 0)} da renda
+                      {daysLeft > 0
+                        ? ` · faltam ${daysLeft} dia${daysLeft > 1 ? "s" : ""}`
+                        : ""}
+                    </>
+                  )}
+                </p>
+              </>
+            )}
           </Card>
 
           {/* --------------------------------------------------- linha de KPIs */}

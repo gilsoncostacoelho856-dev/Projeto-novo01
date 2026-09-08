@@ -1,6 +1,6 @@
 /** Calculos derivados do mes: gasto por categoria, situacao do limite e serie diaria. */
 
-import type { Budget, Category, Expense } from "@/lib/types";
+import type { Budget, Category, Expense, Income, Receivable } from "@/lib/types";
 import { daysInMonth, elapsedDays, roundCents } from "@/lib/format";
 
 /** Fracao do limite a partir da qual o alerta amarelo aparece. */
@@ -25,6 +25,12 @@ export type CategorySummary = {
 export type MonthSummary = {
   rows: CategorySummary[];
   totalSpent: number;
+  /** Soma das fontes de renda do mes. */
+  totalIncome: number;
+  /** Renda total - gasto total. Negativo = gastou mais do que entrou. */
+  leftover: number;
+  /** gasto / renda, ou null quando nao ha renda cadastrada no mes. */
+  spentRatio: number | null;
   totalLimit: number;
   totalRemaining: number;
   budgetRatio: number | null;
@@ -50,6 +56,7 @@ export function summarize(
   categories: Category[],
   expenses: Expense[],
   budgets: Budget[],
+  incomes: Income[] = [],
 ): MonthSummary {
   const spentByCategory = new Map<string, number>();
   for (const e of expenses) {
@@ -94,9 +101,14 @@ export function summarize(
   const elapsed = elapsedDays(month);
   const dailyAverage = elapsed > 0 ? roundCents(totalSpent / elapsed) : 0;
 
+  const totalIncome = roundCents(incomes.reduce((sum, i) => sum + i.amount, 0));
+
   return {
     rows,
     totalSpent,
+    totalIncome,
+    leftover: roundCents(totalIncome - totalSpent),
+    spentRatio: totalIncome > 0 ? totalSpent / totalIncome : null,
     totalLimit,
     totalRemaining: roundCents(totalLimit - totalSpent),
     budgetRatio: totalLimit > 0 ? totalSpent / totalLimit : null,
@@ -105,6 +117,26 @@ export function summarize(
     daily,
     dailyAverage,
     projected: roundCents(dailyAverage * daysInMonth(month)),
+  };
+}
+
+export type ReceivableSummary = {
+  pending: Receivable[];
+  received: Receivable[];
+  /** Soma do que ainda nao foi pago. */
+  pendingTotal: number;
+  /** Soma do que ja foi pago. */
+  receivedTotal: number;
+};
+
+export function summarizeReceivables(list: Receivable[]): ReceivableSummary {
+  const pending = list.filter((r) => r.receivedAt === null);
+  const received = list.filter((r) => r.receivedAt !== null);
+  return {
+    pending,
+    received,
+    pendingTotal: roundCents(pending.reduce((sum, r) => sum + r.amount, 0)),
+    receivedTotal: roundCents(received.reduce((sum, r) => sum + r.amount, 0)),
   };
 }
 

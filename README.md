@@ -1,8 +1,9 @@
 # Minhas Finanças
 
-Aplicativo web de **controle financeiro pessoal**: registre gastos, defina um
-limite mensal por categoria e acompanhe, em gráficos, quanto já foi gasto contra
-cada limite. Feito **mobile-first** — a maior parte do uso acontece no celular.
+Aplicativo web de **controle financeiro pessoal**: registre gastos e sua renda,
+defina um limite mensal por categoria e acompanhe, em gráficos, quanto já foi
+gasto contra cada limite e quanto sobra no fim do mês. Feito **mobile-first** —
+a maior parte do uso acontece no celular.
 
 ## O que tem
 
@@ -11,13 +12,19 @@ cada limite. Feito **mobile-first** — a maior parte do uso acontece no celular
 | **Login** (`/login`) | Entrar e criar conta com e-mail e senha |
 | **Novo gasto** (`/gastos`) | Valor, categoria, data e descrição — também edita um gasto existente |
 | **Orçamento** (`/orcamento`) | Limite mensal por categoria, com opção de copiar os limites do mês anterior |
-| **Painel** (`/dashboard`) | Total do mês, variação vs. mês anterior, medidor de gasto × limite por categoria e gráficos |
+| **Painel** (`/dashboard`) | Total do mês, **sobra do mês** (renda − gastos), variação vs. mês anterior, medidor de gasto × limite por categoria e gráficos |
+| **Renda** (`/renda`) | Fontes de renda do mês (salário, freela, aluguel…), com opção de copiar as do mês anterior |
+| **A receber** (`/a-receber`) | Quem te deve, quanto, quando e por quê — com botão para marcar como recebido |
 | **Histórico** (`/historico`) | Lista filtrável por mês, categoria e busca livre; editar e excluir |
 | **Categorias** (`/categorias`) | Criar, renomear, trocar a cor e excluir (movendo os gastos para outra) |
 
 Extras: **alertas** quando uma categoria passa de 80% e de 100% do limite,
+**destaque em vermelho** quando os gastos do mês passam da renda,
 **categorias personalizáveis** e **tema claro/escuro** (segue o sistema e pode
 ser trocado no cabeçalho).
+
+Os valores **a receber** ficam de fora da sobra do mês de propósito: são um
+lembrete de cobrança, não dinheiro que já entrou.
 
 ## Rodando o projeto
 
@@ -54,6 +61,7 @@ src/
 │   ├── login/                # entrar / criar conta
 │   └── (app)/                # área autenticada (guarda de sessão + moldura)
 │       ├── dashboard/  gastos/  orcamento/  historico/  categorias/
+│       └── renda/  a-receber/
 ├── components/
 │   ├── AppShell.tsx          # nav inferior no celular, lateral no desktop
 │   ├── charts/               # BudgetMeter, DailyColumns, CategoryStack
@@ -65,7 +73,7 @@ src/
     │   ├── demo.ts           #   → localStorage (modo demonstração)
     │   └── index.ts          #   → escolhe um dos dois
     ├── finance-context.tsx   # estado do app (sessão, mês, dados, mutações)
-    ├── derive.ts             # gasto × limite, situação, série diária
+    ├── derive.ts             # gasto × limite, sobra do mês, situação, série diária
     ├── format.ts             # moeda e datas em pt-BR, sem desvio de fuso
     └── types.ts              # modelos + contrato `DataAdapter`
 ```
@@ -100,7 +108,7 @@ toque de 44px, campos com fonte de 16px (evita o zoom automático do Safari),
 
 ## Segurança
 
-- No Supabase, as três tabelas têm **Row Level Security** e cada política compara
+- No Supabase, todas as tabelas têm **Row Level Security** e cada política compara
   `auth.uid()` com `user_id`: mesmo com a chave pública no navegador, um usuário
   só lê e escreve as próprias linhas.
 - Só a chave **anon/publishable** vai para o cliente. A `service_role` nunca deve
