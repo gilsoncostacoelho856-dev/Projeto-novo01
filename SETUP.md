@@ -76,14 +76,33 @@ checar a caixa de entrada depois de criar a conta.
 
 A forma mais direta é a Vercel, que é gratuita para projetos pessoais:
 
-1. Suba o repositório para o GitHub.
-2. Em <https://vercel.com>, **Add New → Project** e importe o repositório.
-3. Em **Environment Variables**, adicione as mesmas duas variáveis do `.env.local`.
-4. **Deploy**.
+A forma mais direta é a Vercel, que é gratuita para projetos pessoais (plano
+Hobby). O projeto já está pronto para isso: é um app Next.js padrão, a Vercel
+detecta o framework sozinha e **não é preciso nenhum arquivo de configuração**.
 
-Depois, no Supabase, em **Authentication** → **URL Configuration**, coloque a URL
-da Vercel em **Site URL** para que os links de confirmação de e-mail apontem para
-o lugar certo.
+1. **Garanta que o código está na branch de produção.** A Vercel publica a branch
+   default do repositório. Se o código ainda estiver só em uma branch de trabalho,
+   mergeie o pull request antes (ou troque a branch de produção em
+   *Project Settings → Git → Production Branch*).
+2. Entre em <https://vercel.com> com a conta do GitHub.
+3. **Add New → Project**, autorize o acesso ao repositório e clique em **Import**.
+4. Em **Environment Variables**, adicione as duas variáveis do `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+   Elas são opcionais: **sem elas o site publica e funciona em modo
+   demonstração**, guardando os dados no navegador de cada visitante. Você pode
+   adicioná-las depois e fazer um **Redeploy**.
+5. Clique em **Deploy**. O build leva cerca de um minuto e a URL final fica no
+   formato `https://SEU-PROJETO.vercel.app`.
+
+Por fim, no Supabase, em **Authentication** → **URL Configuration**, coloque a URL
+da Vercel em **Site URL** (e em **Redirect URLs**) para que os links de
+confirmação de e-mail apontem para o lugar certo — sem isso, eles continuam
+mandando o usuário para `localhost`.
+
+A partir daí, cada push na branch de produção gera um novo deploy automático, e
+cada pull request ganha uma URL de pré-visualização.
 
 ---
 
@@ -96,3 +115,5 @@ o lugar certo.
 | Continua aparecendo "modo demonstração" | O `.env.local` não foi lido: confira o nome do arquivo, se está na raiz e reinicie o `npm run dev`. |
 | "Muitas tentativas" ao criar contas | Limite de e-mails do plano gratuito. Espere alguns minutos ou desligue a confirmação. |
 | Login funciona mas nada aparece | Verifique se o script SQL rodou inteiro — sem as políticas de RLS, as consultas voltam vazias. |
+| Na Vercel o site abre em modo demonstração | As variáveis de ambiente não foram adicionadas, ou foram adicionadas depois do build: adicione e clique em **Redeploy**. |
+| O e-mail de confirmação leva para `localhost` | Configure a **Site URL** no Supabase com o endereço da Vercel. |
