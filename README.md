@@ -48,6 +48,12 @@ Sem nenhuma configuração o app sobe em **modo demonstração**: os dados ficam
 (`demo@financas.app` / `demo1234`) — o botão *Entrar com a conta de exemplo*
 aparece na tela de login.
 
+Quando o formato dos dados muda, o modo demonstração **migra o que já estava
+salvo** ao abrir (`migrateStore`, em `src/lib/data/demo.ts`): a conversão roda
+uma vez, é idempotente e nunca descarta um lançamento — o que ela não souber
+converter fica no `localStorage` e é ignorado pela leitura, em vez de derrubar o
+carregamento. No Supabase o equivalente é rodar `supabase/schema.sql` de novo.
+
 Para usar um banco de verdade (Supabase gratuito), siga o
 **[SETUP.md](./SETUP.md)**. Assim que `NEXT_PUBLIC_SUPABASE_URL` e
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` existirem no `.env.local`, o app passa a usar o
