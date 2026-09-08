@@ -142,6 +142,14 @@ export const IconUsers = (p: IconProps) => (
   </Svg>
 );
 
+/** A pagar: a conta que ainda vence. */
+export const IconReceipt = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M5 3h14v18l-3.5-2-3.5 2-3.5-2L5 21z" />
+    <path d="M9 8h6M9 12h6" />
+  </Svg>
+);
+
 export const IconMore = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="5" cy="12" r="1" />

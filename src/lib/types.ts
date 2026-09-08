@@ -37,21 +37,23 @@ export type ExpenseInput = {
   description: string;
 };
 
-/** Uma fonte de renda de um mes (salario, freela, aluguel recebido...). */
+/** Um ganho, no dia em que entrou. Mesma forma de um gasto: quem recebe todo
+ *  dia (motorista de app, autonomo) lanca um por dia — ou varios no mesmo dia —
+ *  e o mes e so a soma deles. Quem tem renda fixa lanca uma vez por mes. */
 export type Income = {
   id: string;
-  /** Nome da fonte, ex.: "Salário". */
+  /** Nome da fonte, ex.: "Salário", "Uber". */
   source: string;
   /** Valor em reais, positivo. */
   amount: number;
-  /** Mes de referencia no formato YYYY-MM. */
-  month: string;
+  /** Data local no formato YYYY-MM-DD. */
+  date: string;
 };
 
 export type IncomeInput = {
   source: string;
   amount: number;
-  month: string;
+  date: string;
 };
 
 /** Valor que alguem te deve. Nao entra no calculo da sobra do mes. */
@@ -69,6 +71,29 @@ export type Receivable = {
 };
 
 export type ReceivableInput = {
+  person: string;
+  amount: number;
+  date: string;
+  description: string;
+};
+
+/** Valor que voce deve a alguem. Espelho de `Receivable` e, como ele, fica de
+ *  fora da sobra do mes: e lembrete de divida, nao gasto que ja saiu da conta.
+ *  O gasto entra no app quando for pago, pela tela de gastos. */
+export type Payable = {
+  id: string;
+  /** Nome da pessoa ou empresa para quem voce deve. */
+  person: string;
+  /** Valor em reais, positivo. */
+  amount: number;
+  /** Data local no formato YYYY-MM-DD (vencimento ou quando pegou emprestado). */
+  date: string;
+  description: string;
+  /** Data YYYY-MM-DD em que voce pagou, ou null enquanto estiver pendente. */
+  paidAt: string | null;
+};
+
+export type PayableInput = {
   person: string;
   amount: number;
   date: string;
@@ -109,7 +134,7 @@ export interface DataAdapter {
   /** Grava o limite; `limitAmount <= 0` remove o orcamento da categoria. */
   setBudget(categoryId: string, month: string, limitAmount: number): Promise<void>;
 
-  /** Fontes de renda de um mes YYYY-MM, da maior para a menor. */
+  /** Ganhos de um mes YYYY-MM, do mais recente para o mais antigo. */
   listIncomes(month: string): Promise<Income[]>;
   createIncome(input: IncomeInput): Promise<Income>;
   updateIncome(id: string, input: IncomeInput): Promise<void>;
@@ -122,6 +147,14 @@ export interface DataAdapter {
   /** `receivedAt` null volta o lancamento para pendente. */
   setReceivableReceived(id: string, receivedAt: string | null): Promise<void>;
   deleteReceivable(id: string): Promise<void>;
+
+  /** Todas as contas a pagar, pendentes primeiro. */
+  listPayables(): Promise<Payable[]>;
+  createPayable(input: PayableInput): Promise<Payable>;
+  updatePayable(id: string, input: PayableInput): Promise<void>;
+  /** `paidAt` null volta o lancamento para pendente. */
+  setPayablePaid(id: string, paidAt: string | null): Promise<void>;
+  deletePayable(id: string): Promise<void>;
 }
 
 export const DEFAULT_CATEGORIES: { name: string; colorIndex: number }[] = [

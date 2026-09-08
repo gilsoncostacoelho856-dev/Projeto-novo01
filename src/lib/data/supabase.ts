@@ -12,6 +12,8 @@ import {
   type ExpenseInput,
   type Income,
   type IncomeInput,
+  type Payable,
+  type PayableInput,
   type Receivable,
   type ReceivableInput,
 } from "@/lib/types";
@@ -93,7 +95,7 @@ type IncomeRow = {
   id: string;
   source: string;
   amount: string | number;
-  month: string;
+  date: string;
 };
 type ReceivableRow = {
   id: string;
@@ -102,6 +104,14 @@ type ReceivableRow = {
   date: string;
   description: string | null;
   received_at: string | null;
+};
+type PayableRow = {
+  id: string;
+  person: string;
+  amount: string | number;
+  date: string;
+  description: string | null;
+  paid_at: string | null;
 };
 
 const toCategory = (r: CategoryRow): Category => ({
@@ -122,7 +132,7 @@ const toIncome = (r: IncomeRow): Income => ({
   id: r.id,
   source: r.source,
   amount: Number(r.amount),
-  month: r.month.slice(0, 7),
+  date: r.date,
 });
 
 const toReceivable = (r: ReceivableRow): Receivable => ({
@@ -132,6 +142,15 @@ const toReceivable = (r: ReceivableRow): Receivable => ({
   date: r.date,
   description: r.description ?? "",
   receivedAt: r.received_at,
+});
+
+const toPayable = (r: PayableRow): Payable => ({
+  id: r.id,
+  person: r.person,
+  amount: Number(r.amount),
+  date: r.date,
+  description: r.description ?? "",
+  paidAt: r.paid_at,
 });
 
 export const supabaseAdapter: DataAdapter = {
@@ -294,11 +313,14 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   async listIncomes(month) {
+    const { start, end } = monthRange(month);
     const { data, error } = await db()
       .from("incomes")
-      .select("id, source, amount, month")
-      .eq("month", `${month}-01`)
-      .order("amount", { ascending: false });
+      .select("id, source, amount, date")
+      .gte("date", start)
+      .lte("date", end)
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
     if (error) fail(error);
     return (data as IncomeRow[]).map(toIncome);
   },
@@ -311,9 +333,9 @@ export const supabaseAdapter: DataAdapter = {
         user_id: userId,
         source: input.source,
         amount: roundCents(input.amount),
-        month: `${input.month}-01`,
+        date: input.date,
       })
-      .select("id, source, amount, month")
+      .select("id, source, amount, date")
       .single();
     if (error) fail(error);
     return toIncome(data as IncomeRow);
@@ -325,7 +347,7 @@ export const supabaseAdapter: DataAdapter = {
       .update({
         source: input.source,
         amount: roundCents(input.amount),
-        month: `${input.month}-01`,
+        date: input.date,
       })
       .eq("id", id);
     if (error) fail(error);
@@ -387,6 +409,60 @@ export const supabaseAdapter: DataAdapter = {
 
   async deleteReceivable(id) {
     const { error } = await db().from("receivables").delete().eq("id", id);
+    if (error) fail(error);
+  },
+
+  async listPayables() {
+    const { data, error } = await db()
+      .from("payables")
+      .select("id, person, amount, date, description, paid_at")
+      .order("paid_at", { ascending: true, nullsFirst: true })
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) fail(error);
+    return (data as PayableRow[]).map(toPayable);
+  },
+
+  async createPayable(input: PayableInput) {
+    const userId = await currentUserId();
+    const { data, error } = await db()
+      .from("payables")
+      .insert({
+        user_id: userId,
+        person: input.person,
+        amount: roundCents(input.amount),
+        date: input.date,
+        description: input.description,
+      })
+      .select("id, person, amount, date, description, paid_at")
+      .single();
+    if (error) fail(error);
+    return toPayable(data as PayableRow);
+  },
+
+  async updatePayable(id, input) {
+    const { error } = await db()
+      .from("payables")
+      .update({
+        person: input.person,
+        amount: roundCents(input.amount),
+        date: input.date,
+        description: input.description,
+      })
+      .eq("id", id);
+    if (error) fail(error);
+  },
+
+  async setPayablePaid(id, paidAt) {
+    const { error } = await db()
+      .from("payables")
+      .update({ paid_at: paidAt })
+      .eq("id", id);
+    if (error) fail(error);
+  },
+
+  async deletePayable(id) {
+    const { error } = await db().from("payables").delete().eq("id", id);
     if (error) fail(error);
   },
 };

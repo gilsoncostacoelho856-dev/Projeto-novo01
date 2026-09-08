@@ -21,6 +21,7 @@ import {
   IconMoon,
   IconMore,
   IconPlus,
+  IconReceipt,
   IconSun,
   IconTag,
   IconTarget,
@@ -48,6 +49,7 @@ const NAV_PRIMARY: NavItem[] = [
 const NAV_SECONDARY: NavItem[] = [
   { href: "/renda", label: "Renda", Icon: IconTrendUp },
   { href: "/a-receber", label: "A receber", Icon: IconUsers },
+  { href: "/a-pagar", label: "A pagar", Icon: IconReceipt },
   { href: "/categorias", label: "Categorias", Icon: IconTag },
 ];
 

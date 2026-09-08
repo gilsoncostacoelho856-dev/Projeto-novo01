@@ -17,6 +17,8 @@ import {
   type ExpenseInput,
   type Income,
   type IncomeInput,
+  type Payable,
+  type PayableInput,
   type Receivable,
   type ReceivableInput,
 } from "@/lib/types";
@@ -37,6 +39,7 @@ type Store = {
   budgets: Record<string, Budget[]>;
   incomes: Record<string, Income[]>;
   receivables: Record<string, Receivable[]>;
+  payables: Record<string, Payable[]>;
 };
 
 function uid(): string {
@@ -53,6 +56,7 @@ function emptyStore(): Store {
     budgets: {},
     incomes: {},
     receivables: {},
+    payables: {},
   };
 }
 
@@ -149,10 +153,26 @@ function seedStore(): Store {
   }
   store.expenses[user.id] = expenses;
 
-  store.incomes[user.id] = [thisMonth, lastMonth].flatMap((month) => [
-    { id: uid(), source: "Salário", amount: 4200, month },
-    { id: uid(), source: "Freela", amount: 950, month },
-  ]);
+  // Uma fonte fixa (salario, um lancamento) e uma variavel (freelas espalhados
+  // pelo mes) — mostra que a renda agora e somada por lancamento, como o gasto.
+  const freelas = [220, 180, 250, 150, 150];
+  store.incomes[user.id] = [lastMonth, thisMonth].flatMap((month) => {
+    const [y, m] = month.split("-").map(Number);
+    // no mes corrente so ha dias ate hoje: espalha os freelas no que ja passou
+    const lastDay =
+      month === thisMonth ? Number(toISODate(new Date()).slice(8, 10)) : 28;
+    const on = (day: number) =>
+      toISODate(new Date(y, m - 1, Math.min(Math.max(day, 1), lastDay)));
+    return [
+      { id: uid(), source: "Salário", amount: 4200, date: on(5) },
+      ...freelas.map((amount, i) => ({
+        id: uid(),
+        source: "Freela",
+        amount,
+        date: on(Math.round(((i + 1) / (freelas.length + 1)) * lastDay)),
+      })),
+    ];
+  });
 
   const [cy, cm] = thisMonth.split("-").map(Number);
   store.receivables[user.id] = [
@@ -171,6 +191,25 @@ function seedStore(): Store {
       date: toISODate(new Date(cy, cm - 2, 18)),
       description: "Empréstimo",
       receivedAt: null,
+    },
+  ];
+
+  store.payables[user.id] = [
+    {
+      id: uid(),
+      person: "Dentista",
+      amount: 250,
+      date: toISODate(new Date(cy, cm - 1, 20)),
+      description: "Segunda parcela",
+      paidAt: null,
+    },
+    {
+      id: uid(),
+      person: "Cartão da loja",
+      amount: 189.9,
+      date: toISODate(new Date(cy, cm - 1, 25)),
+      description: "",
+      paidAt: null,
     },
   ];
 
@@ -197,11 +236,15 @@ function sortExpenses(list: Expense[]): Expense[] {
   return [...list].sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
 }
 
-/** Pendentes primeiro; dentro de cada grupo, do mais recente para o mais antigo. */
-function sortReceivables(list: Receivable[]): Receivable[] {
+/** Pendentes primeiro; dentro de cada grupo, do mais recente para o mais antigo.
+ *  Serve para "a receber" e "a pagar" — so muda o campo que marca a quitacao. */
+function sortLedger<T extends { date: string }>(
+  list: T[],
+  settledAt: (item: T) => string | null,
+): T[] {
   return [...list].sort((a, b) => {
-    const pendingA = a.receivedAt === null;
-    const pendingB = b.receivedAt === null;
+    const pendingA = settledAt(a) === null;
+    const pendingB = settledAt(b) === null;
     if (pendingA !== pendingB) return pendingA ? -1 : 1;
     return a.date === b.date ? 0 : a.date < b.date ? 1 : -1;
   });
@@ -246,6 +289,7 @@ export const demoAdapter: DataAdapter = {
     store.budgets[user.id] = [];
     store.incomes[user.id] = [];
     store.receivables[user.id] = [];
+    store.payables[user.id] = [];
     writeStore(store);
     window.localStorage.setItem(SESSION_KEY, user.id);
     return { user: { id: user.id, email: user.email }, needsConfirmation: false };
@@ -359,9 +403,10 @@ export const demoAdapter: DataAdapter = {
 
   async listIncomes(month) {
     const userId = requireUserId();
-    return (readStore().incomes[userId] ?? [])
-      .filter((i) => i.month === month)
-      .sort((a, b) => b.amount - a.amount);
+    const list = (readStore().incomes[userId] ?? []).filter(
+      (i) => monthOf(i.date) === month,
+    );
+    return [...list].sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
   },
 
   async createIncome(input: IncomeInput) {
@@ -391,7 +436,7 @@ export const demoAdapter: DataAdapter = {
 
   async listReceivables() {
     const userId = requireUserId();
-    return sortReceivables(readStore().receivables[userId] ?? []);
+    return sortLedger(readStore().receivables[userId] ?? [], (r) => r.receivedAt);
   },
 
   async createReceivable(input: ReceivableInput) {
@@ -432,6 +477,50 @@ export const demoAdapter: DataAdapter = {
     store.receivables[userId] = (store.receivables[userId] ?? []).filter(
       (r) => r.id !== id,
     );
+    writeStore(store);
+  },
+
+  async listPayables() {
+    const userId = requireUserId();
+    return sortLedger(readStore().payables[userId] ?? [], (p) => p.paidAt);
+  },
+
+  async createPayable(input: PayableInput) {
+    const userId = requireUserId();
+    const store = readStore();
+    const payable: Payable = {
+      id: uid(),
+      ...input,
+      amount: roundCents(input.amount),
+      paidAt: null,
+    };
+    store.payables[userId] = [...(store.payables[userId] ?? []), payable];
+    writeStore(store);
+    return payable;
+  },
+
+  async updatePayable(id, input) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.payables[userId] = (store.payables[userId] ?? []).map((p) =>
+      p.id === id ? { ...p, ...input, amount: roundCents(input.amount) } : p,
+    );
+    writeStore(store);
+  },
+
+  async setPayablePaid(id, paidAt) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.payables[userId] = (store.payables[userId] ?? []).map((p) =>
+      p.id === id ? { ...p, paidAt } : p,
+    );
+    writeStore(store);
+  },
+
+  async deletePayable(id) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.payables[userId] = (store.payables[userId] ?? []).filter((p) => p.id !== id);
     writeStore(store);
   },
 };

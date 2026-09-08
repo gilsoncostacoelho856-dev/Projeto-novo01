@@ -62,19 +62,39 @@ create index if not exists budgets_user_month_idx
   on public.budgets (user_id, month);
 
 -- ----------------------------------------------------------------- rendas
--- Uma linha por fonte de renda de cada mes (salario, freela, aluguel...).
+-- Uma linha por ganho, no dia em que entrou — mesma forma de um gasto. Quem
+-- recebe todo dia lanca varios por mes; quem tem renda fixa lanca um so. O
+-- total do mes e sempre a soma das linhas do periodo.
 create table if not exists public.incomes (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references auth.users (id) on delete cascade,
   source     text not null check (char_length(btrim(source)) between 1 and 40),
   amount     numeric(12, 2) not null check (amount > 0),
-  -- sempre o primeiro dia do mes de referencia (ex.: 2026-09-01)
-  month      date not null check (extract(day from month) = 1),
+  date       date not null,
   created_at timestamptz not null default now()
 );
 
-create index if not exists incomes_user_month_idx
-  on public.incomes (user_id, month);
+-- Migracao: a primeira versao desta tabela guardava so o mes (dia 1) na coluna
+-- `month`. Renomeia para `date` preservando os valores — cada renda fixa vira
+-- um lancamento no dia 1 daquele mes.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'incomes' and column_name = 'month'
+  ) and not exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'incomes' and column_name = 'date'
+  ) then
+    alter table public.incomes drop constraint if exists incomes_month_check;
+    alter table public.incomes rename column month to date;
+  end if;
+end $$;
+
+drop index if exists public.incomes_user_month_idx;
+
+create index if not exists incomes_user_date_idx
+  on public.incomes (user_id, date desc, created_at desc);
 
 -- ------------------------------------------------------------- a receber
 -- Valores que outras pessoas devem ao usuario. Nao entram no total gasto
@@ -94,6 +114,24 @@ create table if not exists public.receivables (
 create index if not exists receivables_user_idx
   on public.receivables (user_id, received_at, date desc, created_at desc);
 
+-- --------------------------------------------------------------- a pagar
+-- Espelho de `receivables`: o que o usuario deve. Tambem nao entra no total
+-- gasto nem na sobra do mes — o gasto e lancado em `expenses` quando pagar.
+create table if not exists public.payables (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  person      text not null check (char_length(btrim(person)) between 1 and 60),
+  amount      numeric(12, 2) not null check (amount > 0),
+  date        date not null,
+  description text not null default '' check (char_length(description) <= 120),
+  -- null enquanto estiver pendente; data do pagamento quando quitado
+  paid_at     date,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists payables_user_idx
+  on public.payables (user_id, paid_at, date desc, created_at desc);
+
 -- ==========================================================================
 --  Row Level Security
 -- ==========================================================================
@@ -102,12 +140,15 @@ alter table public.expenses    enable row level security;
 alter table public.budgets     enable row level security;
 alter table public.incomes     enable row level security;
 alter table public.receivables enable row level security;
+alter table public.payables    enable row level security;
 
 do $$
 declare
   t text;
 begin
-  foreach t in array array['categories', 'expenses', 'budgets', 'incomes', 'receivables'] loop
+  foreach t in array array[
+    'categories', 'expenses', 'budgets', 'incomes', 'receivables', 'payables'
+  ] loop
     execute format('drop policy if exists "%1$s_select" on public.%1$I', t);
     execute format('drop policy if exists "%1$s_insert" on public.%1$I', t);
     execute format('drop policy if exists "%1$s_update" on public.%1$I', t);

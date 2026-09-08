@@ -11,11 +11,13 @@ import {
 } from "react";
 import { getAdapter, isSupabaseConfigured } from "@/lib/data";
 import { onAuthChange } from "@/lib/data/supabase";
-import { addMonths, currentMonth } from "@/lib/format";
+import { addMonths, currentMonth, daysInMonth } from "@/lib/format";
 import {
   summarize,
+  summarizePayables,
   summarizeReceivables,
   type MonthSummary,
+  type PayableSummary,
   type ReceivableSummary,
 } from "@/lib/derive";
 import {
@@ -27,6 +29,8 @@ import {
   type ExpenseInput,
   type Income,
   type IncomeInput,
+  type Payable,
+  type PayableInput,
   type Receivable,
   type ReceivableInput,
 } from "@/lib/types";
@@ -52,10 +56,13 @@ type FinanceValue = {
   incomes: Income[];
   /** Todos os valores a receber (pendentes e recebidos), sem recorte de mes. */
   receivables: Receivable[];
+  /** Todas as contas a pagar (pendentes e pagas), sem recorte de mes. */
+  payables: Payable[];
   /** Gastos do mes anterior, usados na variacao do painel. */
   previousTotal: number;
   summary: MonthSummary;
   receivableSummary: ReceivableSummary;
+  payableSummary: PayableSummary;
 
   loading: boolean;
   error: string | null;
@@ -82,16 +89,21 @@ type FinanceValue = {
   ) => Promise<void>;
   removeCategory: (id: string, moveTo: string | null) => Promise<void>;
 
-  addIncome: (source: string, amount: number) => Promise<void>;
+  addIncome: (input: IncomeInput) => Promise<void>;
   editIncome: (id: string, input: IncomeInput) => Promise<void>;
   removeIncome: (id: string) => Promise<void>;
-  /** Copia para o mes atual as fontes que ainda nao existem nele. */
+  /** Repete neste mes as fontes fixas do mes anterior. Ver a implementacao. */
   copyIncomesFromPreviousMonth: () => Promise<number>;
 
   addReceivable: (input: ReceivableInput) => Promise<void>;
   editReceivable: (id: string, input: ReceivableInput) => Promise<void>;
   markReceivableReceived: (id: string, receivedAt: string | null) => Promise<void>;
   removeReceivable: (id: string) => Promise<void>;
+
+  addPayable: (input: PayableInput) => Promise<void>;
+  editPayable: (id: string, input: PayableInput) => Promise<void>;
+  markPayablePaid: (id: string, paidAt: string | null) => Promise<void>;
+  removePayable: (id: string) => Promise<void>;
 };
 
 const FinanceContext = createContext<FinanceValue | null>(null);
@@ -108,6 +120,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [receivables, setReceivables] = useState<Receivable[]>([]);
+  const [payables, setPayables] = useState<Payable[]>([]);
   const [previousTotal, setPreviousTotal] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -137,12 +150,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const [cats, exps, buds, incs, recs, prev] = await Promise.all([
+      const [cats, exps, buds, incs, recs, pays, prev] = await Promise.all([
         adapter.listCategories(),
         adapter.listExpenses(month),
         adapter.listBudgets(month),
         adapter.listIncomes(month),
         adapter.listReceivables(),
+        adapter.listPayables(),
         adapter.listExpenses(addMonths(month, -1)),
       ]);
       if (id !== requestId.current) return;
@@ -151,6 +165,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       setBudgets(buds);
       setIncomes(incs);
       setReceivables(recs);
+      setPayables(pays);
       setPreviousTotal(prev.reduce((sum, e) => sum + e.amount, 0));
     } catch (err) {
       if (id !== requestId.current) return;
@@ -167,6 +182,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       setBudgets([]);
       setIncomes([]);
       setReceivables([]);
+      setPayables([]);
       setPreviousTotal(0);
       setLoading(false);
       return;
@@ -184,6 +200,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     [receivables],
   );
 
+  const payableSummary = useMemo(() => summarizePayables(payables), [payables]);
+
   const value: FinanceValue = {
     mode: adapter.mode,
     user,
@@ -195,9 +213,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     budgets,
     incomes,
     receivables,
+    payables,
     previousTotal,
     summary,
     receivableSummary,
+    payableSummary,
     loading,
     error,
     reload: load,
@@ -256,8 +276,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       await load();
     },
 
-    addIncome: async (source, amount) => {
-      await adapter.createIncome({ source, amount, month });
+    addIncome: async (input) => {
+      await adapter.createIncome(input);
       await load();
     },
     editIncome: async (id, input) => {
@@ -268,19 +288,34 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       await adapter.deleteIncome(id);
       await load();
     },
+    /** Repete so o que parece renda fixa: fontes que tiveram UM lancamento no
+     *  mes anterior e ainda nao aparecem neste. Assim quem lanca "Uber" todo
+     *  dia nao ganha trinta linhas de uma vez, e o salario volta sozinho —
+     *  no mesmo dia do mes, encurtado quando o mes e mais curto. */
     copyIncomesFromPreviousMonth: async () => {
       const previous = await adapter.listIncomes(addMonths(month, -1));
-      const existing = new Set(incomes.map((i) => i.source.toLowerCase()));
-      const missing = previous.filter((i) => !existing.has(i.source.toLowerCase()));
-      for (const income of missing) {
+      const occurrences = new Map<string, number>();
+      for (const income of previous) {
+        const key = income.source.trim().toLowerCase();
+        occurrences.set(key, (occurrences.get(key) ?? 0) + 1);
+      }
+      const existing = new Set(incomes.map((i) => i.source.trim().toLowerCase()));
+      const fixed = previous.filter((i) => {
+        const key = i.source.trim().toLowerCase();
+        return occurrences.get(key) === 1 && !existing.has(key);
+      });
+
+      const lastDay = daysInMonth(month);
+      for (const income of fixed) {
+        const day = Math.min(Number(income.date.slice(8, 10)), lastDay);
         await adapter.createIncome({
           source: income.source,
           amount: income.amount,
-          month,
+          date: `${month}-${String(day).padStart(2, "0")}`,
         });
       }
       await load();
-      return missing.length;
+      return fixed.length;
     },
 
     addReceivable: async (input) => {
@@ -297,6 +332,23 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     },
     removeReceivable: async (id) => {
       await adapter.deleteReceivable(id);
+      await load();
+    },
+
+    addPayable: async (input) => {
+      await adapter.createPayable(input);
+      await load();
+    },
+    editPayable: async (id, input) => {
+      await adapter.updatePayable(id, input);
+      await load();
+    },
+    markPayablePaid: async (id, paidAt) => {
+      await adapter.setPayablePaid(id, paidAt);
+      await load();
+    },
+    removePayable: async (id) => {
+      await adapter.deletePayable(id);
       await load();
     },
   };
