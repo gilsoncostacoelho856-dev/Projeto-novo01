@@ -2,8 +2,13 @@
 
 /** Moldura do app: cabecalho fixo, navegacao inferior no celular e lateral no
  *  desktop. Pensado mobile-first — os alvos de toque tem 44px e a barra inferior
- *  respeita a area segura do iPhone. */
+ *  respeita a area segura do iPhone.
+ *
+ *  Sao sete secoes, mais do que cabe numa barra inferior de celular: as quatro
+ *  do dia a dia ficam visiveis e o resto entra no menu "Mais". No desktop a
+ *  lateral mostra todas. */
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFinance } from "@/lib/finance-context";
@@ -14,18 +19,35 @@ import {
   IconList,
   IconLogout,
   IconMoon,
+  IconMore,
   IconPlus,
   IconSun,
   IconTag,
   IconTarget,
+  IconTrendUp,
+  IconUsers,
   IconWallet,
+  IconX,
 } from "@/components/icons";
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  Icon: (props: { className?: string }) => React.ReactElement;
+};
+
+/** Barra inferior do celular e topo da lateral. */
+const NAV_PRIMARY: NavItem[] = [
   { href: "/dashboard", label: "Painel", Icon: IconDashboard },
   { href: "/gastos", label: "Novo", Icon: IconPlus },
   { href: "/orcamento", label: "Orçamento", Icon: IconTarget },
   { href: "/historico", label: "Histórico", Icon: IconList },
+];
+
+/** Menu "Mais" no celular; continuam na lateral do desktop. */
+const NAV_SECONDARY: NavItem[] = [
+  { href: "/renda", label: "Renda", Icon: IconTrendUp },
+  { href: "/a-receber", label: "A receber", Icon: IconUsers },
   { href: "/categorias", label: "Categorias", Icon: IconTag },
 ];
 
@@ -33,8 +55,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, signOut, mode } = useFinance();
   const { theme, toggle } = useTheme();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const inMore = NAV_SECONDARY.some((item) => isActive(item.href));
+
+  // Fecha o menu ao navegar e com Esc.
+  useEffect(() => setMoreOpen(false), [pathname]);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoreOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moreOpen]);
 
   return (
     <div className="min-h-dvh lg:flex">
@@ -49,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="flex flex-col gap-1">
-            {NAV.map(({ href, label, Icon }) => (
+            {[...NAV_PRIMARY, ...NAV_SECONDARY].map(({ href, label, Icon }) => (
               <Link
                 key={href}
                 href={href}
@@ -113,6 +148,49 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
+      {/* menu "Mais" (celular): folha acima da barra inferior */}
+      {moreOpen ? (
+        // z-20 deixa a barra inferior (z-30) por cima: ela continua visivel e clicavel
+        <div className="fixed inset-0 z-20 lg:hidden">
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={() => setMoreOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div
+            className="absolute inset-x-0 rounded-t-2xl border-t border-line bg-surface p-3"
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 3.5rem)" }}
+          >
+            <div className="mb-1 flex items-center justify-between px-2">
+              <h2 className="text-sm font-semibold text-ink">Mais</h2>
+              <IconButton label="Fechar menu" onClick={() => setMoreOpen(false)}>
+                <IconX />
+              </IconButton>
+            </div>
+            <ul className="flex flex-col gap-1">
+              {NAV_SECONDARY.map(({ href, label, Icon }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={isActive(href) ? "page" : undefined}
+                    className={cx(
+                      "flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+                      isActive(href)
+                        ? "bg-surface-2 text-ink"
+                        : "text-ink-2 hover:bg-surface-2 hover:text-ink",
+                    )}
+                  >
+                    <Icon />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
       {/* navegacao inferior (celular) */}
       <nav
         className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur lg:hidden"
@@ -120,7 +198,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Navegação principal"
       >
         <ul className="mx-auto flex max-w-lg">
-          {NAV.map(({ href, label, Icon }) => (
+          {NAV_PRIMARY.map(({ href, label, Icon }) => (
             <li key={href} className="flex-1">
               <Link
                 href={href}
@@ -135,6 +213,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             </li>
           ))}
+          <li className="flex-1">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((open) => !open)}
+              aria-expanded={moreOpen}
+              className={cx(
+                "flex min-h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors",
+                inMore || moreOpen ? "text-accent" : "text-ink-2",
+              )}
+            >
+              <IconMore />
+              Mais
+            </button>
+          </li>
         </ul>
       </nav>
     </div>

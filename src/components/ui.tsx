@@ -12,14 +12,18 @@ export function cx(...parts: (string | false | null | undefined)[]): string {
 export function Card({
   children,
   className,
+  style,
   as: Tag = "section",
 }: {
   children: ReactNode;
   className?: string;
+  /** Escape hatch para cores vindas de token (ex.: destacar um card crítico). */
+  style?: React.CSSProperties;
   as?: "section" | "div" | "form" | "li";
 }) {
   return (
     <Tag
+      style={style}
       className={cx(
         "rounded-2xl border border-line bg-surface p-4 sm:p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
         className,

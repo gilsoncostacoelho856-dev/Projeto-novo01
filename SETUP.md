@@ -24,8 +24,12 @@ o app funciona em **modo demonstração**, guardando tudo no navegador.
 3. Clique em **Run**.
 
 Deve aparecer *Success. No rows returned*. Isso cria as tabelas `categories`,
-`expenses` e `budgets`, liga o Row Level Security nas três e configura o gatilho
-que dá as sete categorias padrão a cada conta nova.
+`expenses`, `budgets`, `incomes` e `receivables`, liga o Row Level Security em
+todas e configura o gatilho que dá as sete categorias padrão a cada conta nova.
+
+> Já tinha o banco criado numa versão anterior do app? Rode o arquivo de novo:
+> ele só acrescenta as tabelas novas (`incomes` e `receivables`) e mantém seus
+> dados.
 
 > Pode rodar de novo sem medo: o script é idempotente.
 

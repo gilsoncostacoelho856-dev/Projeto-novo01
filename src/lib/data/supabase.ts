@@ -10,6 +10,10 @@ import {
   type DataAdapter,
   type Expense,
   type ExpenseInput,
+  type Income,
+  type IncomeInput,
+  type Receivable,
+  type ReceivableInput,
 } from "@/lib/types";
 import { monthRange, roundCents } from "@/lib/format";
 
@@ -85,6 +89,20 @@ type ExpenseRow = {
   description: string | null;
 };
 type BudgetRow = { category_id: string; month: string; limit_amount: string | number };
+type IncomeRow = {
+  id: string;
+  source: string;
+  amount: string | number;
+  month: string;
+};
+type ReceivableRow = {
+  id: string;
+  person: string;
+  amount: string | number;
+  date: string;
+  description: string | null;
+  received_at: string | null;
+};
 
 const toCategory = (r: CategoryRow): Category => ({
   id: r.id,
@@ -98,6 +116,22 @@ const toExpense = (r: ExpenseRow): Expense => ({
   amount: Number(r.amount),
   date: r.date,
   description: r.description ?? "",
+});
+
+const toIncome = (r: IncomeRow): Income => ({
+  id: r.id,
+  source: r.source,
+  amount: Number(r.amount),
+  month: r.month.slice(0, 7),
+});
+
+const toReceivable = (r: ReceivableRow): Receivable => ({
+  id: r.id,
+  person: r.person,
+  amount: Number(r.amount),
+  date: r.date,
+  description: r.description ?? "",
+  receivedAt: r.received_at,
 });
 
 export const supabaseAdapter: DataAdapter = {
@@ -256,6 +290,103 @@ export const supabaseAdapter: DataAdapter = {
       .delete()
       .eq("category_id", categoryId)
       .eq("month", monthDate);
+    if (error) fail(error);
+  },
+
+  async listIncomes(month) {
+    const { data, error } = await db()
+      .from("incomes")
+      .select("id, source, amount, month")
+      .eq("month", `${month}-01`)
+      .order("amount", { ascending: false });
+    if (error) fail(error);
+    return (data as IncomeRow[]).map(toIncome);
+  },
+
+  async createIncome(input: IncomeInput) {
+    const userId = await currentUserId();
+    const { data, error } = await db()
+      .from("incomes")
+      .insert({
+        user_id: userId,
+        source: input.source,
+        amount: roundCents(input.amount),
+        month: `${input.month}-01`,
+      })
+      .select("id, source, amount, month")
+      .single();
+    if (error) fail(error);
+    return toIncome(data as IncomeRow);
+  },
+
+  async updateIncome(id, input) {
+    const { error } = await db()
+      .from("incomes")
+      .update({
+        source: input.source,
+        amount: roundCents(input.amount),
+        month: `${input.month}-01`,
+      })
+      .eq("id", id);
+    if (error) fail(error);
+  },
+
+  async deleteIncome(id) {
+    const { error } = await db().from("incomes").delete().eq("id", id);
+    if (error) fail(error);
+  },
+
+  async listReceivables() {
+    const { data, error } = await db()
+      .from("receivables")
+      .select("id, person, amount, date, description, received_at")
+      .order("received_at", { ascending: true, nullsFirst: true })
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) fail(error);
+    return (data as ReceivableRow[]).map(toReceivable);
+  },
+
+  async createReceivable(input: ReceivableInput) {
+    const userId = await currentUserId();
+    const { data, error } = await db()
+      .from("receivables")
+      .insert({
+        user_id: userId,
+        person: input.person,
+        amount: roundCents(input.amount),
+        date: input.date,
+        description: input.description,
+      })
+      .select("id, person, amount, date, description, received_at")
+      .single();
+    if (error) fail(error);
+    return toReceivable(data as ReceivableRow);
+  },
+
+  async updateReceivable(id, input) {
+    const { error } = await db()
+      .from("receivables")
+      .update({
+        person: input.person,
+        amount: roundCents(input.amount),
+        date: input.date,
+        description: input.description,
+      })
+      .eq("id", id);
+    if (error) fail(error);
+  },
+
+  async setReceivableReceived(id, receivedAt) {
+    const { error } = await db()
+      .from("receivables")
+      .update({ received_at: receivedAt })
+      .eq("id", id);
+    if (error) fail(error);
+  },
+
+  async deleteReceivable(id) {
+    const { error } = await db().from("receivables").delete().eq("id", id);
     if (error) fail(error);
   },
 };

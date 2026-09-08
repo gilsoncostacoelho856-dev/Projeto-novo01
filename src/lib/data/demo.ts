@@ -15,6 +15,10 @@ import {
   type DataAdapter,
   type Expense,
   type ExpenseInput,
+  type Income,
+  type IncomeInput,
+  type Receivable,
+  type ReceivableInput,
 } from "@/lib/types";
 import { addMonths, currentMonth, monthOf, roundCents, toISODate } from "@/lib/format";
 
@@ -31,6 +35,8 @@ type Store = {
   categories: Record<string, Category[]>;
   expenses: Record<string, Expense[]>;
   budgets: Record<string, Budget[]>;
+  incomes: Record<string, Income[]>;
+  receivables: Record<string, Receivable[]>;
 };
 
 function uid(): string {
@@ -40,7 +46,14 @@ function uid(): string {
 }
 
 function emptyStore(): Store {
-  return { users: [], categories: {}, expenses: {}, budgets: {} };
+  return {
+    users: [],
+    categories: {},
+    expenses: {},
+    budgets: {},
+    incomes: {},
+    receivables: {},
+  };
 }
 
 function readStore(): Store {
@@ -50,7 +63,8 @@ function readStore(): Store {
     if (!raw) return seedStore();
     const parsed = JSON.parse(raw) as Store;
     if (!parsed || !Array.isArray(parsed.users)) return seedStore();
-    return parsed;
+    // Um store gravado por uma versao anterior nao tem as colecoes novas.
+    return { ...emptyStore(), ...parsed };
   } catch {
     return emptyStore();
   }
@@ -135,6 +149,31 @@ function seedStore(): Store {
   }
   store.expenses[user.id] = expenses;
 
+  store.incomes[user.id] = [thisMonth, lastMonth].flatMap((month) => [
+    { id: uid(), source: "Salário", amount: 4200, month },
+    { id: uid(), source: "Freela", amount: 950, month },
+  ]);
+
+  const [cy, cm] = thisMonth.split("-").map(Number);
+  store.receivables[user.id] = [
+    {
+      id: uid(),
+      person: "Marina",
+      amount: 120,
+      date: toISODate(new Date(cy, cm - 1, Math.min(5, Number(toISODate(new Date()).slice(8, 10))))),
+      description: "Rachar o jantar",
+      receivedAt: null,
+    },
+    {
+      id: uid(),
+      person: "Rafael",
+      amount: 300,
+      date: toISODate(new Date(cy, cm - 2, 18)),
+      description: "Empréstimo",
+      receivedAt: null,
+    },
+  ];
+
   writeStore(store);
   return store;
 }
@@ -156,6 +195,16 @@ function requireUserId(): string {
 
 function sortExpenses(list: Expense[]): Expense[] {
   return [...list].sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
+}
+
+/** Pendentes primeiro; dentro de cada grupo, do mais recente para o mais antigo. */
+function sortReceivables(list: Receivable[]): Receivable[] {
+  return [...list].sort((a, b) => {
+    const pendingA = a.receivedAt === null;
+    const pendingB = b.receivedAt === null;
+    if (pendingA !== pendingB) return pendingA ? -1 : 1;
+    return a.date === b.date ? 0 : a.date < b.date ? 1 : -1;
+  });
 }
 
 export const demoAdapter: DataAdapter = {
@@ -195,6 +244,8 @@ export const demoAdapter: DataAdapter = {
     }));
     store.expenses[user.id] = [];
     store.budgets[user.id] = [];
+    store.incomes[user.id] = [];
+    store.receivables[user.id] = [];
     writeStore(store);
     window.localStorage.setItem(SESSION_KEY, user.id);
     return { user: { id: user.id, email: user.email }, needsConfirmation: false };
@@ -303,6 +354,84 @@ export const demoAdapter: DataAdapter = {
       list.push({ categoryId, month, limitAmount: roundCents(limitAmount) });
     }
     store.budgets[userId] = list;
+    writeStore(store);
+  },
+
+  async listIncomes(month) {
+    const userId = requireUserId();
+    return (readStore().incomes[userId] ?? [])
+      .filter((i) => i.month === month)
+      .sort((a, b) => b.amount - a.amount);
+  },
+
+  async createIncome(input: IncomeInput) {
+    const userId = requireUserId();
+    const store = readStore();
+    const income: Income = { id: uid(), ...input, amount: roundCents(input.amount) };
+    store.incomes[userId] = [...(store.incomes[userId] ?? []), income];
+    writeStore(store);
+    return income;
+  },
+
+  async updateIncome(id, input) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.incomes[userId] = (store.incomes[userId] ?? []).map((i) =>
+      i.id === id ? { ...i, ...input, amount: roundCents(input.amount) } : i,
+    );
+    writeStore(store);
+  },
+
+  async deleteIncome(id) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.incomes[userId] = (store.incomes[userId] ?? []).filter((i) => i.id !== id);
+    writeStore(store);
+  },
+
+  async listReceivables() {
+    const userId = requireUserId();
+    return sortReceivables(readStore().receivables[userId] ?? []);
+  },
+
+  async createReceivable(input: ReceivableInput) {
+    const userId = requireUserId();
+    const store = readStore();
+    const receivable: Receivable = {
+      id: uid(),
+      ...input,
+      amount: roundCents(input.amount),
+      receivedAt: null,
+    };
+    store.receivables[userId] = [...(store.receivables[userId] ?? []), receivable];
+    writeStore(store);
+    return receivable;
+  },
+
+  async updateReceivable(id, input) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.receivables[userId] = (store.receivables[userId] ?? []).map((r) =>
+      r.id === id ? { ...r, ...input, amount: roundCents(input.amount) } : r,
+    );
+    writeStore(store);
+  },
+
+  async setReceivableReceived(id, receivedAt) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.receivables[userId] = (store.receivables[userId] ?? []).map((r) =>
+      r.id === id ? { ...r, receivedAt } : r,
+    );
+    writeStore(store);
+  },
+
+  async deleteReceivable(id) {
+    const userId = requireUserId();
+    const store = readStore();
+    store.receivables[userId] = (store.receivables[userId] ?? []).filter(
+      (r) => r.id !== id,
+    );
     writeStore(store);
   },
 };

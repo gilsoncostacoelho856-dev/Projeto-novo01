@@ -37,6 +37,44 @@ export type ExpenseInput = {
   description: string;
 };
 
+/** Uma fonte de renda de um mes (salario, freela, aluguel recebido...). */
+export type Income = {
+  id: string;
+  /** Nome da fonte, ex.: "Salário". */
+  source: string;
+  /** Valor em reais, positivo. */
+  amount: number;
+  /** Mes de referencia no formato YYYY-MM. */
+  month: string;
+};
+
+export type IncomeInput = {
+  source: string;
+  amount: number;
+  month: string;
+};
+
+/** Valor que alguem te deve. Nao entra no calculo da sobra do mes. */
+export type Receivable = {
+  id: string;
+  /** Nome de quem deve. */
+  person: string;
+  /** Valor em reais, positivo. */
+  amount: number;
+  /** Data local no formato YYYY-MM-DD (quando emprestou ou combinou receber). */
+  date: string;
+  description: string;
+  /** Data YYYY-MM-DD do pagamento, ou null enquanto estiver pendente. */
+  receivedAt: string | null;
+};
+
+export type ReceivableInput = {
+  person: string;
+  amount: number;
+  date: string;
+  description: string;
+};
+
 /** Erro com mensagem ja em portugues, pronta para exibir ao usuario. */
 export class AppError extends Error {}
 
@@ -70,6 +108,20 @@ export interface DataAdapter {
   listBudgets(month: string): Promise<Budget[]>;
   /** Grava o limite; `limitAmount <= 0` remove o orcamento da categoria. */
   setBudget(categoryId: string, month: string, limitAmount: number): Promise<void>;
+
+  /** Fontes de renda de um mes YYYY-MM, da maior para a menor. */
+  listIncomes(month: string): Promise<Income[]>;
+  createIncome(input: IncomeInput): Promise<Income>;
+  updateIncome(id: string, input: IncomeInput): Promise<void>;
+  deleteIncome(id: string): Promise<void>;
+
+  /** Todos os valores a receber, pendentes primeiro. */
+  listReceivables(): Promise<Receivable[]>;
+  createReceivable(input: ReceivableInput): Promise<Receivable>;
+  updateReceivable(id: string, input: ReceivableInput): Promise<void>;
+  /** `receivedAt` null volta o lancamento para pendente. */
+  setReceivableReceived(id: string, receivedAt: string | null): Promise<void>;
+  deleteReceivable(id: string): Promise<void>;
 }
 
 export const DEFAULT_CATEGORIES: { name: string; colorIndex: number }[] = [
