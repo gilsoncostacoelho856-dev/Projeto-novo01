@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* O tema e sempre carimbado em <html data-theme="light|dark"> por um script
+   inline (src/lib/theme.tsx), entao a variante `dark:` segue esse atributo. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------------------------------------------------------------------------
+   Tokens de design. Paleta de dados validada (checagens de banda de luminosidade,
+   piso de croma, separacao para daltonismo e contraste) — ver README.
+   --------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  --plane: #f9f9f7; /* fundo da pagina */
+  --surface: #fcfcfb; /* cards e superficie dos graficos */
+  --surface-2: #f2f1ed; /* trilhas, campos, estados hover */
+
+  --ink-1: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #898781;
+
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --line: rgba(11, 11, 11, 0.1);
+
+  /* categoricas — ordem fixa, nunca ciclada */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+
+  /* trilha do medidor: passo claro do mesmo tom do acento */
+  --track: #cde2fb;
+  --accent: #2a78d6;
+  --accent-ink: #1c5cab;
+
+  /* status — fixos, nunca tematizados, sempre com icone + rotulo */
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --plane: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #242422;
+
+  --ink-1: #ffffff;
+  --ink-2: #c3c2b7;
+  --ink-3: #898781;
+
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --line: rgba(255, 255, 255, 0.1);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  --track: #184f95;
+  --accent: #3987e5;
+  --accent-ink: #86b6ef;
+
+  --good: #0ca30c;
+  --good-ink: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+}
+
+@theme inline {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-plane: var(--plane);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --color-ink: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--ink-3);
+
+  --color-grid: var(--grid);
+  --color-axis: var(--axis);
+  --color-line: var(--line);
+
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-track: var(--track);
+
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--plane);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  /* respeita a area segura do iPhone com a barra de navegacao inferior */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* foco visivel e consistente em toda a interface */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* esconde os spinners de <input type="number"> */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
