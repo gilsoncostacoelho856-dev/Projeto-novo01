@@ -140,6 +140,7 @@ perde nesse intervalo; basta rodar o SQL e recarregar.
 | "Confirme seu e-mail antes de entrar" | Veja o passo 5, ou confirme pelo link enviado. |
 | Continua aparecendo "modo demonstração" | O `.env.local` não foi lido: confira o nome do arquivo, se está na raiz e reinicie o `npm run dev`. Publicado na Vercel: as variáveis existem, mas falta **Redeploy**. |
 | "Seu banco está numa versão anterior do esquema" | O app foi atualizado antes do banco. Rode `supabase/schema.sql` de novo. |
+| "Permissão negada para a tabela ..." (*permission denied for table*) | Faltam os `grant` para os papéis `anon`/`authenticated`. Rode `supabase/schema.sql` de novo — ele concede. |
 | Na Vercel, o tipo Config está cinza e não dá para escolher | A variável foi salva como *Secret* e não pode ser convertida. Apague e crie de novo já como **Config**. |
 | "Muitas tentativas" ao criar contas | Limite de e-mails do plano gratuito. Espere alguns minutos ou desligue a confirmação. |
 | Login funciona mas nada aparece | Verifique se o script SQL rodou inteiro — sem as políticas de RLS, as consultas voltam vazias. |

@@ -69,6 +69,10 @@ function translate(message: string): string {
   if (m.includes("relation") && m.includes("does not exist")) {
     return "As tabelas ainda não foram criadas no Supabase. Rode o SQL de supabase/schema.sql.";
   }
+  // Tabela existe, mas os papeis anon/authenticated nao receberam os grants.
+  if (m.includes("permission denied")) {
+    return "O banco existe, mas falta liberar o acesso às tabelas. Rode de novo o SQL de supabase/schema.sql — ele concede as permissões.";
+  }
   // Banco parado numa versao anterior do esquema (ex.: incomes.month virou date).
   if (m.includes("column") && m.includes("does not exist")) {
     return "Seu banco está numa versão anterior do esquema. Rode de novo o SQL de supabase/schema.sql — ele atualiza sem perder dados.";

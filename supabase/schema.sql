@@ -170,6 +170,26 @@ begin
 end $$;
 
 -- ==========================================================================
+--  Permissao de tabela para os papeis do Supabase
+--
+--  RLS e GRANT sao coisas diferentes e as duas sao necessarias: o GRANT
+--  libera a TABELA para o papel, o RLS decide quais LINHAS ele enxerga.
+--  Sem os grants abaixo o app recebe "permission denied for table ..." mesmo
+--  com as tabelas criadas e as politicas no lugar — dependendo do projeto, o
+--  Supabase nao concede isso sozinho para tabelas novas.
+-- ==========================================================================
+grant usage on schema public to anon, authenticated;
+
+grant select, insert, update, delete on
+  public.categories,
+  public.expenses,
+  public.budgets,
+  public.incomes,
+  public.receivables,
+  public.payables
+to anon, authenticated;
+
+-- ==========================================================================
 --  Categorias padrao para cada conta nova
 -- ==========================================================================
 create or replace function public.handle_new_user()
