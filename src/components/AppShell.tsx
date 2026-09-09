@@ -13,7 +13,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFinance } from "@/lib/finance-context";
 import { useTheme } from "@/lib/theme";
-import { cx, IconButton } from "@/components/ui";
+import { Alert, cx, IconButton } from "@/components/ui";
 import {
   IconDashboard,
   IconList,
@@ -55,7 +55,7 @@ const NAV_SECONDARY: NavItem[] = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, signOut, mode } = useFinance();
+  const { user, signOut, mode, error } = useFinance();
   const { theme, toggle } = useTheme();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -146,6 +146,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="mx-auto w-full max-w-4xl flex-1 px-3 pb-28 pt-4 sm:px-5 lg:pb-10">
+          {/* Erro de carregamento aparece em QUALQUER tela: antes so o Painel
+              mostrava, e nas outras a falha virava uma lista vazia sem
+              explicacao — parecia que os dados tinham sumido. */}
+          {error ? (
+            <div className="mb-4">
+              <Alert tone="critical" title="Não foi possível carregar seus dados">
+                {error}
+              </Alert>
+            </div>
+          ) : null}
           {children}
         </main>
       </div>

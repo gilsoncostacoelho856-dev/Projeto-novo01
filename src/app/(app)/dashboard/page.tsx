@@ -19,7 +19,7 @@ import { Alert, Button, Card, EmptyState, SectionTitle, Skeleton } from "@/compo
 import { IconAlert, IconPlus, IconTarget, IconTrendUp } from "@/components/icons";
 
 export default function DashboardPage() {
-  const { month, summary, previousTotal, loading, error, categories } = useFinance();
+  const { month, summary, previousTotal, loading, categories } = useFinance();
   const {
     totalSpent,
     totalIncome,
@@ -46,8 +46,7 @@ export default function DashboardPage() {
         <MonthPicker />
       </div>
 
-      {error ? <Alert tone="critical">{error}</Alert> : null}
-
+      {/* o erro de carregamento e mostrado pela moldura (AppShell), em todas as telas */}
       {loading ? (
         <>
           <Skeleton className="h-40 w-full" />
