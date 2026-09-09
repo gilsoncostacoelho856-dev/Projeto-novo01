@@ -68,10 +68,48 @@ function readStore(): Store {
     const parsed = JSON.parse(raw) as Store;
     if (!parsed || !Array.isArray(parsed.users)) return seedStore();
     // Um store gravado por uma versao anterior nao tem as colecoes novas.
-    return { ...emptyStore(), ...parsed };
+    const store = { ...emptyStore(), ...parsed };
+    // Regrava so quando a migracao mudou algo — ela e idempotente.
+    if (migrateStore(store)) writeStore(store);
+    return store;
   } catch {
     return emptyStore();
   }
+}
+
+/** Renda gravada pela versao anterior: um valor fixo por mes, sem dia. */
+type LegacyIncome = Omit<Income, "date"> & { date?: string; month?: string };
+
+/** Converte um store gravado por versoes anteriores para o formato atual.
+ *  Retorna true quando mudou algo e vale a pena regravar.
+ *
+ *  Regra: nunca descarta lancamento. O que nao souber migrar fica no store do
+ *  jeito que esta — a leitura ignora o que nao consegue interpretar, em vez de
+ *  quebrar o carregamento inteiro. */
+function migrateStore(store: Store): boolean {
+  let changed = false;
+
+  // A renda deixou de ser "um valor do mes" e virou um lancamento com data,
+  // como o gasto. Cada renda antiga vira um lancamento no dia 1 daquele mes.
+  for (const [userId, list] of Object.entries(store.incomes)) {
+    if (!Array.isArray(list)) continue;
+    let touched = false;
+    const migrated = list.map((income) => {
+      const legacy = income as LegacyIncome;
+      if (typeof legacy.date === "string" || typeof legacy.month !== "string") {
+        return income;
+      }
+      touched = true;
+      const { month, ...rest } = legacy;
+      return { ...rest, date: month.length >= 10 ? month : `${month}-01` } as Income;
+    });
+    if (touched) {
+      store.incomes[userId] = migrated;
+      changed = true;
+    }
+  }
+
+  return changed;
 }
 
 function writeStore(store: Store): void {
@@ -403,8 +441,10 @@ export const demoAdapter: DataAdapter = {
 
   async listIncomes(month) {
     const userId = requireUserId();
+    // `typeof` em vez de so ler: um lancamento em formato desconhecido some da
+    // lista, mas nao derruba o carregamento do mes inteiro.
     const list = (readStore().incomes[userId] ?? []).filter(
-      (i) => monthOf(i.date) === month,
+      (i) => typeof i?.date === "string" && monthOf(i.date) === month,
     );
     return [...list].sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
   },

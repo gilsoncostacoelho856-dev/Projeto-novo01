@@ -35,6 +35,11 @@ import {
   type ReceivableInput,
 } from "@/lib/types";
 
+/** Guarda o que veio; o que falhou mantem o valor anterior na tela. */
+function apply<T>(result: PromiseSettledResult<T>, set: (value: T) => void): void {
+  if (result.status === "fulfilled") set(result.value);
+}
+
 export function errorMessage(err: unknown): string {
   if (err instanceof AppError) return err.message;
   if (err instanceof Error && err.message) return err.message;
@@ -150,7 +155,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const [cats, exps, buds, incs, recs, pays, prev] = await Promise.all([
+      // `allSettled`, nao `all`: cada colecao e aplicada por conta propria.
+      // Com `all`, uma unica falha (uma tabela que ainda nao existe, um registro
+      // em formato antigo) descartava TODAS as respostas e a tela ficava
+      // zerada, como se os dados do usuario tivessem sumido.
+      const [cats, exps, buds, incs, recs, pays, prev] = await Promise.allSettled([
         adapter.listCategories(),
         adapter.listExpenses(month),
         adapter.listBudgets(month),
@@ -160,13 +169,21 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         adapter.listExpenses(addMonths(month, -1)),
       ]);
       if (id !== requestId.current) return;
-      setCategories(cats);
-      setExpenses(exps);
-      setBudgets(buds);
-      setIncomes(incs);
-      setReceivables(recs);
-      setPayables(pays);
-      setPreviousTotal(prev.reduce((sum, e) => sum + e.amount, 0));
+
+      apply(cats, setCategories);
+      apply(exps, setExpenses);
+      apply(buds, setBudgets);
+      apply(incs, setIncomes);
+      apply(recs, setReceivables);
+      apply(pays, setPayables);
+      apply(prev, (list) =>
+        setPreviousTotal(list.reduce((sum, e) => sum + e.amount, 0)),
+      );
+
+      const failed = [cats, exps, buds, incs, recs, pays, prev].find(
+        (r) => r.status === "rejected",
+      );
+      if (failed?.status === "rejected") setError(errorMessage(failed.reason));
     } catch (err) {
       if (id !== requestId.current) return;
       setError(errorMessage(err));
