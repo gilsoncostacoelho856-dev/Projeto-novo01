@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ============================================================
+     EDITE AQUI: título e descrição que aparecem no Google
+     ============================================================ -->
+<title>Bar &amp; Pizzaria da Espanhola — Grajaú, MA</title>
+<meta name="description" content="Pizza assada na hora, porções e chopp gelado no Centro de Grajaú (MA). Mesas externas, aberto todo dia a partir das 18h. Peça pelo WhatsApp.">
+
+<link rel="canonical" href="https://espanhola.example.com/">
+<meta name="theme-color" content="#12100e">
+
+<!-- Como o link aparece quando alguém compartilha no WhatsApp/Instagram -->
+<meta property="og:type" content="restaurant">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Bar &amp; Pizzaria da Espanhola">
+<meta property="og:description" content="Pizza assada na hora, porções e chopp gelado no Centro de Grajaú (MA).">
+<meta property="og:image" content="imagens/capa.jpg">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍕</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<a class="pular" href="#cardapio">Pular para o cardápio</a>
+
+<!-- ================= CABEÇALHO ================= -->
+<header class="topo" id="topo">
+  <div class="faixa">
+    <a class="marca" href="#topo">
+      <span class="marca-icone" aria-hidden="true">🍕</span>
+      <span class="marca-texto">
+        <strong>Bar &amp; Pizzaria</strong>
+        <em>da Espanhola</em>
+      </span>
+    </a>
+
+    <button class="menu-botao" id="menuBotao" aria-expanded="false" aria-controls="navegacao">
+      <span class="menu-barras" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="sr">Abrir menu</span>
+    </button>
+
+    <nav class="nav" id="navegacao" aria-label="Principal">
+      <a href="#cardapio">Cardápio</a>
+      <a href="#sobre">A casa</a>
+      <a href="#horarios">Horários</a>
+      <a href="#local">Onde estamos</a>
+      <!-- EDITE AQUI: troque o número pelo WhatsApp da pizzaria (55 + DDD + número) -->
+      <a class="nav-cta" href="https://wa.me/5599900000000?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido." target="_blank" rel="noopener">Pedir agora</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= ABERTURA ================= -->
+  <section class="capa">
+    <div class="capa-conteudo">
+      <p class="selo">
+        <span class="estrelas" aria-hidden="true">★★★★★</span>
+        <strong>4,9</strong> · 16 avaliações no Google
+      </p>
+
+      <h1>Pizza na brasa,<br>chopp gelado<br>e mesa na calçada.</h1>
+
+      <p class="linha-fina">
+        No Centro de Grajaú, todo dia a partir das 18h. Massa aberta na hora,
+        porção pra dividir e aquele clima de bar de bairro.
+      </p>
+
+      <!-- O JS preenche este aviso com "Aberto agora" ou "Fechado · abre às 18h" -->
+      <p class="agora" id="statusAgora" hidden></p>
+
+      <div class="botoes">
+        <a class="botao botao-forte" href="https://wa.me/5599900000000?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido." target="_blank" rel="noopener">
+          Pedir no WhatsApp
+        </a>
+        <a class="botao botao-fraco" href="#cardapio">Ver o cardápio</a>
+      </div>
+    </div>
+
+    <div class="capa-arte" aria-hidden="true">
+      <div class="pizza">
+        <span class="fatia"></span><span class="fatia"></span><span class="fatia"></span>
+        <span class="fatia"></span><span class="fatia"></span><span class="fatia"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TRÊS DESTAQUES ================= -->
+  <ul class="tiras">
+    <li><span aria-hidden="true">🔥</span> Forno na hora do pedido</li>
+    <li><span aria-hidden="true">🪑</span> Mesas externas na calçada</li>
+    <li><span aria-hidden="true">🛵</span> Entrega no Centro e bairros</li>
+  </ul>
+
+  <!-- ================= CARDÁPIO =================
+       EDITE AQUI: este é o coração do site.
+       Cada item é um <li class="item"> com nome, descrição e preço.
+       Para tirar um item, apague o <li> inteiro. Para adicionar, copie um e mude o texto.
+       Os preços abaixo são EXEMPLOS — troque pelos seus.
+  -->
+  <section id="cardapio" class="secao">
+    <header class="secao-topo">
+      <h2>Cardápio</h2>
+      <p>Pizza grande, 8 fatias. Também fazemos meio a meio — é só combinar no pedido.</p>
+    </header>
+
+    <div class="abas" role="tablist" aria-label="Categorias do cardápio">
+      <button role="tab" aria-selected="true"  aria-controls="pizzas"   id="aba-pizzas">Pizzas</button>
+      <button role="tab" aria-selected="false" aria-controls="porcoes"  id="aba-porcoes">Porções</button>
+      <button role="tab" aria-selected="false" aria-controls="bebidas"  id="aba-bebidas">Bebidas</button>
+    </div>
+
+    <div class="painel" id="pizzas" role="tabpanel" aria-labelledby="aba-pizzas">
+      <ul class="itens">
+        <li class="item">
+          <div><h3>Mussarela</h3><p>Molho da casa, mussarela, orégano e azeitona.</p></div>
+          <span class="preco">R$ 35</span>
+        </li>
+        <li class="item">
+          <div><h3>Calabresa</h3><p>Calabresa fatiada, cebola roxa e azeitona.</p></div>
+          <span class="preco">R$ 38</span>
+        </li>
+        <li class="item">
+          <div><h3>Frango com catupiry</h3><p>Frango desfiado temperado e requeijão cremoso.</p></div>
+          <span class="preco">R$ 42</span>
+        </li>
+        <li class="item">
+          <div><h3>Portuguesa</h3><p>Presunto, ovo, cebola, pimentão, ervilha e mussarela.</p></div>
+          <span class="preco">R$ 45</span>
+        </li>
+        <li class="item">
+          <div><h3>Quatro queijos</h3><p>Mussarela, provolone, parmesão e catupiry.</p></div>
+          <span class="preco">R$ 48</span>
+        </li>
+        <li class="item">
+          <div><h3>Da Espanhola <em class="tag">a mais pedida</em></h3><p>Calabresa, bacon, mussarela, cebola e pimenta de cheiro.</p></div>
+          <span class="preco">R$ 52</span>
+        </li>
+        <li class="item">
+          <div><h3>Chocolate com morango</h3><p>Doce, pra fechar a noite.</p></div>
+          <span class="preco">R$ 40</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="painel" id="porcoes" role="tabpanel" aria-labelledby="aba-porcoes" hidden>
+      <ul class="itens">
+        <li class="item">
+          <div><h3>Calabresa acebolada</h3><p>Serve 2 pessoas, com farofa e vinagrete.</p></div>
+          <span class="preco">R$ 30</span>
+        </li>
+        <li class="item">
+          <div><h3>Frango a passarinho</h3><p>Serve 2 a 3 pessoas, com limão e alho.</p></div>
+          <span class="preco">R$ 35</span>
+        </li>
+        <li class="item">
+          <div><h3>Batata frita</h3><p>Com cheddar e bacon, se quiser.</p></div>
+          <span class="preco">R$ 28</span>
+        </li>
+        <li class="item">
+          <div><h3>Peixe frito</h3><p>Do rio, com pirão e arroz.</p></div>
+          <span class="preco">R$ 55</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="painel" id="bebidas" role="tabpanel" aria-labelledby="aba-bebidas" hidden>
+      <ul class="itens">
+        <li class="item"><div><h3>Chopp</h3><p>Bem gelado, tirado na hora.</p></div><span class="preco">R$ 10</span></li>
+        <li class="item"><div><h3>Cerveja long neck</h3><p>Consulte as marcas do dia.</p></div><span class="preco">R$ 9</span></li>
+        <li class="item"><div><h3>Refrigerante 2 L</h3><p>Coca, Guaraná, Fanta.</p></div><span class="preco">R$ 14</span></li>
+        <li class="item"><div><h3>Suco natural</h3><p>Acerola, maracujá, cajá.</p></div><span class="preco">R$ 10</span></li>
+        <li class="item"><div><h3>Água / água com gás</h3><p>500 ml.</p></div><span class="preco">R$ 4</span></li>
+      </ul>
+    </div>
+
+    <p class="rodape-cardapio">
+      Preços sujeitos a alteração. Última atualização: setembro de 2026.
+    </p>
+  </section>
+
+  <!-- ================= A CASA ================= -->
+  <section id="sobre" class="secao secao-escura">
+    <div class="duas-colunas">
+      <div>
+        <h2>A casa</h2>
+        <p>
+          A Espanhola é bar e pizzaria na mesma mesa: você senta na calçada,
+          pede uma porção pra dividir, e a pizza sai do forno quentinha na
+          sequência. Sem pressa, sem frescura.
+        </p>
+        <p>
+          Estamos na Rua Matias Alvarenga, no Centro de Grajaú, a poucos passos
+          do rio. Aceitamos pedidos no balcão, na mesa e pelo WhatsApp — para
+          comer aqui, levar ou receber em casa.
+        </p>
+        <p class="assinatura">— Nota 4,9 no Google, com 16 avaliações. Obrigado, Grajaú. 🧡</p>
+      </div>
+
+      <ul class="fatos">
+        <li><strong>Mesas externas</strong><span>Calçada arejada, boa pra grupo</span></li>
+        <li><strong>Comida no bar</strong><span>Porções e pizza no mesmo lugar</span></li>
+        <li><strong>Pagamento</strong><span>Pix, cartão e dinheiro</span></li>
+        <li><strong>Entrega</strong><span>Centro e bairros próximos</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= HORÁRIOS =================
+       EDITE AQUI e também no arquivo script.js (lista HORARIOS),
+       para o aviso de "aberto/fechado" bater com a tabela.
+  -->
+  <section id="horarios" class="secao">
+    <header class="secao-topo">
+      <h2>Horários</h2>
+      <p>Abrimos à noite, todos os dias.</p>
+    </header>
+
+    <ul class="tabela-horarios" id="tabelaHorarios">
+      <li data-dia="1"><span>Segunda</span><span>18:00 – 00:00</span></li>
+      <li data-dia="2"><span>Terça</span><span>18:00 – 00:00</span></li>
+      <li data-dia="3"><span>Quarta</span><span>18:00 – 00:00</span></li>
+      <li data-dia="4"><span>Quinta</span><span>18:00 – 00:00</span></li>
+      <li data-dia="5"><span>Sexta</span><span>18:00 – 02:00</span></li>
+      <li data-dia="6"><span>Sábado</span><span>18:00 – 02:00</span></li>
+      <li data-dia="0"><span>Domingo</span><span>18:00 – 00:00</span></li>
+    </ul>
+  </section>
+
+  <!-- ================= LOCAL ================= -->
+  <section id="local" class="secao secao-escura">
+    <div class="duas-colunas">
+      <div>
+        <h2>Onde estamos</h2>
+        <address>
+          R. Matias Alvarenga<br>
+          Bairro Centro — Grajaú, MA<br>
+          CEP 65940-000
+        </address>
+
+        <div class="botoes">
+          <a class="botao botao-forte" target="_blank" rel="noopener"
+             href="https://www.google.com/maps/search/?api=1&amp;query=Bar+%26+Pizzaria+da+Espanhola%2C+R.+Matias+Alvarenga%2C+Graja%C3%BA+-+MA">
+            Como chegar
+          </a>
+          <!-- EDITE AQUI: telefone fixo/celular da casa -->
+          <a class="botao botao-fraco" href="tel:+5599900000000">Ligar</a>
+        </div>
+
+        <p class="obs">
+          Também respondemos no Instagram e no WhatsApp — o pedido pelo
+          WhatsApp costuma ser o mais rápido nos fins de semana.
+        </p>
+      </div>
+
+      <!-- Mapa do Google. Para trocar: abra o Google Maps, procure a pizzaria,
+           clique em Compartilhar → Incorporar um mapa → copie o src do iframe. -->
+      <div class="mapa">
+        <iframe
+          title="Mapa até o Bar &amp; Pizzaria da Espanhola"
+          src="https://www.google.com/maps?q=R.+Matias+Alvarenga,+Centro,+Graja%C3%BA+-+MA,+65940-000&output=embed"
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= RODAPÉ ================= -->
+<footer class="rodape">
+  <div class="rodape-grade">
+    <div>
+      <strong class="rodape-marca">Bar &amp; Pizzaria da Espanhola</strong>
+      <p>R. Matias Alvarenga, Centro — Grajaú, MA</p>
+      <p>Todo dia, a partir das 18h</p>
+    </div>
+    <nav aria-label="Rodapé">
+      <a href="#cardapio">Cardápio</a>
+      <a href="#horarios">Horários</a>
+      <a href="#local">Como chegar</a>
+      <!-- EDITE AQUI: link do seu Instagram -->
+      <a href="https://instagram.com/" target="_blank" rel="noopener">Instagram</a>
+    </nav>
+  </div>
+  <p class="creditos">© <span id="ano">2026</span> Bar &amp; Pizzaria da Espanhola. Todos os direitos reservados.</p>
+</footer>
+
+<!-- Botão flutuante de WhatsApp -->
+<a class="zap" href="https://wa.me/5599900000000?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido." target="_blank" rel="noopener">
+  <span aria-hidden="true">💬</span> Pedir no WhatsApp
+</a>
+
+<!-- Dados estruturados: ajudam o Google a mostrar o site com nota, endereço e horário.
+     EDITE AQUI junto com o resto (telefone, horários, faixa de preço). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Bar & Pizzaria da Espanhola",
+  "servesCuisine": ["Pizza", "Brasileira"],
+  "priceRange": "$$",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "R. Matias Alvarenga",
+    "addressLocality": "Grajaú",
+    "addressRegion": "MA",
+    "postalCode": "65940-000",
+    "addressCountry": "BR"
+  },
+  "telephone": "+55 99 90000-0000",
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Sunday"], "opens": "18:00", "closes": "00:00" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Friday","Saturday"], "opens": "18:00", "closes": "02:00" }
+  ]
+}
+</script>
+
+<script src="script.js"></script>
+</body>
+</html>
