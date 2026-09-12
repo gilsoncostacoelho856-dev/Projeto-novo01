@@ -217,10 +217,13 @@
 
   function cliente() {
     if (sb) return Promise.resolve(sb);
+    // Versao fixa de proposito: uma atualizacao automatica da biblioteca
+    // nao pode quebrar o site sem aviso. Precisa ser 2.50 ou mais nova
+    // para entender as chaves no formato `sb_publishable_...`.
     var pronto = window.supabase
       ? Promise.resolve()
       : carregarScript(
-          'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'
+          'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js'
         );
     return pronto.then(function () {
       sb = window.supabase.createClient(CFG.supabase.url, CFG.supabase.anonKey);
@@ -362,6 +365,14 @@
 
   var API = {
     modo: temNuvem ? 'nuvem' : 'local',
+
+    /**
+     * Os dados do `padrao` do config.js, ja normalizados. Serve de reserva
+     * para a pagina do cliente quando o banco nao responde: e melhor
+     * mostrar o nome e o WhatsApp da loja do que um texto generico sem
+     * telefone nenhum.
+     */
+    padrao: padraoCompleto,
 
     /** Le loja + itens. Sempre devolve um objeto valido. */
     carregar: function () {

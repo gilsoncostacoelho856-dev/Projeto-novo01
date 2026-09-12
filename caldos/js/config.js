@@ -28,10 +28,15 @@ window.CALDOS_CONFIG = {
     '8dfe283fdb2367474a074c8c1e25ae2ab239e9d246066882d3996785d93a13f5',
 
   // Modo nuvem (Supabase). Deixe as duas linhas vazias para o modo local.
-  // Use SEMPRE a chave "anon / publishable" — nunca a `service_role`.
+  // Use SEMPRE a chave "anon / publishable" — nunca a `service_role`
+  // (a secreta, que comeca com `sb_secret_`): esta chave fica visivel para
+  // qualquer visitante, e quem protege os dados e o RLS do banco.
+  //
+  // A `url` e o endereco do projeto, SEM o `/rest/v1/` no fim — a
+  // biblioteca acrescenta esse trecho sozinha.
   supabase: {
-    url: '',
-    anonKey: '',
+    url: 'https://prjxvskmsescbknujyly.supabase.co',
+    anonKey: 'sb_publishable_fhAIjCEWjXRMOCjm-5-58g_RSt_UgN1',
   },
 
   // Conteudo inicial: e o que aparece na primeira vez, antes de voce

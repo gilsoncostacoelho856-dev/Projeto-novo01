@@ -550,8 +550,12 @@
         pintarCarrinho();
       })
       .catch(function (erro) {
-        // Sem dados ainda conseguimos mostrar a pagina com os textos padrao.
-        estado.loja = estado.loja || { nome: 'Delivery de Caldos', whatsapp: '', taxaEntrega: 0 };
+        // Banco fora do ar: a pagina continua de pe com os dados do
+        // config.js — nome, horario, area e, o que mais importa, o
+        // WhatsApp, para o cliente conseguir pedir mesmo assim. O cardapio
+        // fica vazio de proposito: mostrar precos que talvez tenham mudado
+        // seria pior do que nao mostrar nada.
+        estado.loja = estado.loja || window.Dados.padrao().loja;
         estado.itens = [];
         pintarLoja();
         pintarCardapio();
