@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Delivery de Caldos</title>
+    <meta
+      name="description"
+      content="Caldos caseiros feitos na hora, entregues quentinhos na sua porta. Peça pelo WhatsApp."
+    />
+    <meta name="theme-color" content="#e8590c" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%B2%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="css/estilos.css" />
+  </head>
+  <body>
+    <!-- ------------------------------------------------------------ topo -->
+    <header class="topo">
+      <div class="envelope topo__interno">
+        <div class="marca">
+          <span class="marca__panela" aria-hidden="true">🍲</span>
+          <span data-loja="nome">Delivery de Caldos</span>
+        </div>
+
+        <button
+          type="button"
+          class="carrinho-botao"
+          id="abrirCarrinho"
+          aria-haspopup="dialog"
+        >
+          <span class="carrinho-botao__selo escondido" id="seloCarrinho">0</span>
+          <span aria-hidden="true">🛒</span>
+          <span id="topoTotal">R$ 0,00</span>
+          <span class="so-leitor" id="topoLeitor">Carrinho vazio</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ---------------------------------------------------------- banner -->
+    <section class="banner">
+      <div class="envelope banner__interno">
+        <div class="banner__conteudo">
+          <span class="banner__selo">🔥 Feito na hora, todos os dias</span>
+          <h1 data-loja="bannerTitulo">Caldo quentinho na sua porta</h1>
+          <p data-loja="bannerTexto"></p>
+          <div class="banner__linhas">
+            <span data-linha="horario"><span aria-hidden="true">🕒</span> <span data-loja="horario"></span></span>
+            <span data-linha="areaEntrega"><span aria-hidden="true">📍</span> <span data-loja="areaEntrega"></span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------- cardapio -->
+    <main>
+      <section class="secao envelope" aria-labelledby="tituloCardapio">
+        <div class="secao__cabeca">
+          <h2 id="tituloCardapio">Nosso cardápio</h2>
+          <p id="contagemCardapio"></p>
+        </div>
+
+        <div id="avisoCardapio"></div>
+        <div class="grade" id="grade"></div>
+      </section>
+    </main>
+
+    <!-- ---------------------------------------------------------- rodape -->
+    <footer class="rodape">
+      <div class="envelope rodape__grade">
+        <div>
+          <h3>Horário de funcionamento</h3>
+          <p data-loja="horario"></p>
+        </div>
+        <div>
+          <h3>Área de entrega</h3>
+          <p data-loja="areaEntrega"></p>
+        </div>
+        <div>
+          <h3>Pedidos pelo WhatsApp</h3>
+          <p>
+            <a id="zapRodape" href="#" rel="noopener">Falar com a gente</a>
+          </p>
+        </div>
+      </div>
+      <div class="envelope rodape__base">
+        <span>© <span id="ano"></span> <span data-loja="nome"></span></span>
+        <a href="admin.html">Painel do dono</a>
+      </div>
+    </footer>
+
+    <!-- ---------------------------------------------------- barra fixa -->
+    <div class="barra-resumo" id="barraResumo" aria-hidden="true">
+      <div class="barra-resumo__interno">
+        <div class="barra-resumo__contas">
+          <div class="barra-resumo__itens" id="barraItens">0 itens</div>
+          <div class="barra-resumo__valor" id="barraValor">R$ 0,00</div>
+        </div>
+        <button type="button" class="botao" id="barraVerCarrinho">
+          Ver carrinho
+        </button>
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------- carrinho -->
+    <div class="cortina" id="cortina"></div>
+
+    <aside
+      class="gaveta"
+      id="gaveta"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tituloCarrinho"
+      aria-hidden="true"
+    >
+      <div class="gaveta__cabeca">
+        <h2 id="tituloCarrinho">Seu pedido</h2>
+        <button type="button" class="fechar" id="fecharCarrinho" aria-label="Fechar carrinho">
+          ×
+        </button>
+      </div>
+
+      <div class="gaveta__corpo" id="corpoCarrinho"></div>
+
+      <div class="gaveta__pe" id="peCarrinho"></div>
+    </aside>
+
+    <script src="js/config.js"></script>
+    <script src="js/dados.js"></script>
+    <script src="js/loja.js"></script>
+  </body>
+</html>

@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Painel — Delivery de Caldos</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#2a1711" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%99%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="css/estilos.css" />
+  </head>
+  <body>
+    <!-- ==================================================== TELA DE ENTRADA -->
+    <section class="entrada" id="telaEntrada">
+      <form class="entrada__caixa" id="formEntrada">
+        <h1>Painel do cardápio</h1>
+        <p id="entradaSubtitulo">Entre para editar os caldos da sua loja.</p>
+
+        <div id="entradaAviso"></div>
+
+        <label class="campo escondido" id="campoEmail" for="email">
+          <span>E-mail da sua conta</span>
+          <input type="email" id="email" autocomplete="username" />
+        </label>
+
+        <label class="campo" for="senha">
+          <span>Senha</span>
+          <input
+            type="password"
+            id="senha"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+
+        <button type="submit" class="botao botao--largo" id="botaoEntrar">
+          Entrar
+        </button>
+
+        <p style="margin: 16px 0 0; font-size: 0.875rem; text-align: center">
+          <a href="index.html">← Voltar para o site</a>
+        </p>
+      </form>
+    </section>
+
+    <!-- ========================================================= PAINEL -->
+    <div id="telaPainel" class="escondido">
+      <header class="admin-topo">
+        <div class="envelope admin-topo__interno">
+          <div class="marca">
+            <span class="marca__panela" aria-hidden="true">⚙️</span>
+            <span>Painel do cardápio</span>
+            <span class="etiqueta etiqueta--modo" id="etiquetaModo"></span>
+          </div>
+          <div class="admin-topo__acoes">
+            <a class="botao botao--neutro botao--pequeno" href="index.html" target="_blank" rel="noopener">
+              Ver o site
+            </a>
+            <button type="button" class="botao botao--neutro botao--pequeno" id="botaoSair">
+              Sair
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="painel envelope">
+        <div id="painelAviso"></div>
+
+        <div class="abas" role="tablist">
+          <button type="button" class="aba" role="tab" data-aba="cardapio" aria-selected="true">
+            🍲 Cardápio
+          </button>
+          <button type="button" class="aba" role="tab" data-aba="loja" aria-selected="false">
+            🏠 Minha loja
+          </button>
+          <button type="button" class="aba" role="tab" data-aba="extras" aria-selected="false">
+            🔐 Backup
+          </button>
+        </div>
+
+        <!-- ------------------------------------------------ aba cardapio -->
+        <section id="abaCardapio" role="tabpanel">
+          <form class="bloco" id="formItem">
+            <h2 id="tituloFormItem">Adicionar um caldo ao cardápio</h2>
+            <p id="subtituloFormItem">
+              Preencha o nome e o preço. A foto e a descrição são opcionais.
+            </p>
+
+            <input type="hidden" id="itemId" />
+
+            <div class="foto-escolha">
+              <div class="foto-previa foto-previa--vazia" id="fotoPrevia"></div>
+              <div class="foto-escolha__lado">
+                <input
+                  type="file"
+                  id="arquivoFoto"
+                  accept="image/*"
+                  class="so-leitor"
+                />
+                <button type="button" class="botao botao--contorno botao--pequeno" id="botaoEscolherFoto">
+                  📷 Escolher foto
+                </button>
+                <button type="button" class="botao botao--perigo botao--pequeno escondido" id="botaoTirarFoto">
+                  Remover foto
+                </button>
+                <p>Pode ser direto da câmera do celular. A imagem é reduzida sozinha.</p>
+              </div>
+            </div>
+
+            <div class="dupla">
+              <label class="campo" for="itemNome">
+                <span>Nome do caldo *</span>
+                <input type="text" id="itemNome" required maxlength="80" />
+              </label>
+
+              <label class="campo" for="itemPreco">
+                <span>Preço (R$) *</span>
+                <input
+                  type="number"
+                  id="itemPreco"
+                  required
+                  min="0.01"
+                  step="0.01"
+                  inputmode="decimal"
+                />
+              </label>
+            </div>
+
+            <label class="campo" for="itemDescricao">
+              <span>Descrição (opcional)</span>
+              <textarea id="itemDescricao" maxlength="280" placeholder="Ex.: Mandioca cremosa com carne seca desfiada."></textarea>
+              <span class="ajuda" id="contaLetras">0 de 280 caracteres</span>
+            </label>
+
+            <label class="marcador" for="itemSemDescricao">
+              <input type="checkbox" id="itemSemDescricao" />
+              <span>Sem descrição — mostrar só o nome e o preço</span>
+            </label>
+
+            <label class="marcador" for="itemAtivo">
+              <input type="checkbox" id="itemAtivo" checked />
+              <span>Disponível para pedido (desmarque para "esgotado hoje")</span>
+            </label>
+
+            <div id="itemAviso"></div>
+
+            <div class="modal__acoes">
+              <button type="submit" class="botao" id="botaoSalvarItem">
+                Salvar no cardápio
+              </button>
+              <button type="button" class="botao botao--neutro escondido" id="botaoCancelarEdicao">
+                Cancelar edição
+              </button>
+            </div>
+          </form>
+
+          <div class="bloco">
+            <h2>Caldos cadastrados</h2>
+            <p id="resumoItens">Carregando…</p>
+            <div id="listaItens"></div>
+          </div>
+        </section>
+
+        <!-- ---------------------------------------------------- aba loja -->
+        <section id="abaLoja" role="tabpanel" class="escondido">
+          <form class="bloco" id="formLoja">
+            <h2>Dados da sua loja</h2>
+            <p>Tudo isso aparece na página do cliente assim que você salvar.</p>
+
+            <label class="campo" for="lojaNome">
+              <span>Nome do delivery *</span>
+              <input type="text" id="lojaNome" required maxlength="60" />
+            </label>
+
+            <div class="dupla">
+              <label class="campo" for="lojaWhatsapp">
+                <span>WhatsApp para receber os pedidos *</span>
+                <input
+                  type="tel"
+                  id="lojaWhatsapp"
+                  required
+                  inputmode="numeric"
+                  placeholder="11 99999-9999"
+                />
+                <span class="ajuda">
+                  Com DDD. O código do Brasil (55) é colocado sozinho.
+                </span>
+              </label>
+
+              <label class="campo" for="lojaTaxa">
+                <span>Taxa de entrega (R$)</span>
+                <input
+                  type="number"
+                  id="lojaTaxa"
+                  min="0"
+                  step="0.01"
+                  inputmode="decimal"
+                />
+                <span class="ajuda">Deixe 0 se a entrega for grátis.</span>
+              </label>
+            </div>
+
+            <label class="campo" for="lojaHorario">
+              <span>Horário de funcionamento</span>
+              <input
+                type="text"
+                id="lojaHorario"
+                maxlength="120"
+                placeholder="Terça a domingo, das 18h às 23h30"
+              />
+            </label>
+
+            <label class="campo" for="lojaArea">
+              <span>Área de entrega</span>
+              <input
+                type="text"
+                id="lojaArea"
+                maxlength="160"
+                placeholder="Centro, Jardim das Flores e Vila Nova"
+              />
+            </label>
+
+            <label class="campo" for="lojaBannerTitulo">
+              <span>Título do banner</span>
+              <input type="text" id="lojaBannerTitulo" maxlength="80" />
+            </label>
+
+            <label class="campo" for="lojaBannerTexto">
+              <span>Texto do banner</span>
+              <textarea id="lojaBannerTexto" maxlength="200"></textarea>
+            </label>
+
+            <div id="lojaAviso"></div>
+
+            <button type="submit" class="botao" id="botaoSalvarLoja">
+              Salvar dados da loja
+            </button>
+          </form>
+        </section>
+
+        <!-- -------------------------------------------------- aba extras -->
+        <section id="abaExtras" role="tabpanel" class="escondido">
+          <div class="bloco">
+            <h2>Cópia de segurança</h2>
+            <p>
+              Baixe um arquivo com todo o seu cardápio. Serve para guardar, para
+              mudar de aparelho ou para voltar atrás se algo der errado.
+            </p>
+            <div class="modal__acoes">
+              <button type="button" class="botao botao--contorno" id="botaoExportar">
+                ⬇️ Baixar cópia do cardápio
+              </button>
+              <button type="button" class="botao botao--contorno" id="botaoImportar">
+                ⬆️ Restaurar de um arquivo
+              </button>
+            </div>
+            <input type="file" id="arquivoBackup" accept="application/json,.json" class="so-leitor" />
+            <div id="backupAviso" style="margin-top: 14px"></div>
+          </div>
+
+          <div class="bloco" id="blocoSenha">
+            <h2>Trocar a senha do painel</h2>
+            <p>
+              A senha não fica guardada em nenhum lugar: o painel gera uma linha
+              de configuração que você cola no arquivo
+              <code>js/config.js</code> e publica de novo.
+            </p>
+            <label class="campo" for="novaSenha">
+              <span>Nova senha</span>
+              <input type="password" id="novaSenha" autocomplete="new-password" />
+            </label>
+            <button type="button" class="botao botao--contorno" id="botaoGerarSenha">
+              Gerar a nova linha
+            </button>
+            <div id="senhaAviso" style="margin-top: 14px"></div>
+          </div>
+
+          <div class="bloco" id="blocoModo">
+            <h2>Onde o cardápio está guardado</h2>
+            <p id="textoModo"></p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/dados.js"></script>
+    <script src="js/admin.js"></script>
+  </body>
+</html>
