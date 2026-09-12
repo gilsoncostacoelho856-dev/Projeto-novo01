@@ -127,17 +127,29 @@ ligar a nuvem, entre no painel e use **"Restaurar de um arquivo"**.
 
 O site é feito de arquivos estáticos — não tem build, não tem servidor.
 
-> ⚠️ Este repositório tem **dois projetos**: o aplicativo de finanças na raiz e
-> este site na pasta `caldos`. Por isso, na Vercel, crie um projeto **novo** e
-> aponte a pasta certa — senão a Vercel tenta publicar o app de finanças.
+> ⚠️ **Leia isto antes de começar.** O repositório guarda **dois códigos
+> diferentes**: o aplicativo de finanças, na raiz, e este site, na pasta
+> `caldos`. E, na Vercel, ele já está ligado a **dois projetos**
+> (`projeto-novo01` e `projeto-novo02`) — os dois publicam a raiz, ou seja, o
+> aplicativo de finanças.
+>
+> Nenhum dos dois publica este site. Para colocá-lo no ar você cria um
+> **terceiro projeto**, apontado para a pasta `caldos`. Não adianta procurar o
+> site dentro dos endereços que já existem: uma pasta qualquer do repositório
+> não fica acessível por lá.
 
 1. Entre em <https://vercel.com> com a sua conta do GitHub.
-2. **Add New** → **Project** → escolha o repositório `projeto-novo01`.
-3. Em **Framework Preset**, escolha **Other**.
-4. Em **Root Directory**, clique em *Edit* e selecione a pasta **`caldos`**.
+2. **Add New** → **Project** → escolha o repositório `Projeto-novo01`.
+   A Vercel avisa que esse repositório já está ligado a outro projeto — está
+   tudo bem, siga adiante. É esse aviso que confirma que você está criando um
+   projeto novo, e não mexendo nos que já existem.
+3. Em **Project Name**, escreva `gn-caldos` — esse nome vira o endereço.
+4. Em **Framework Preset**, escolha **Other**.
+5. Em **Root Directory**, clique em *Edit* e selecione a pasta **`caldos`**.
    Esse é o passo que não pode faltar.
-5. Deixe *Build Command* e *Install Command* **vazios**.
-6. Clique em **Deploy**.
+6. Em **Build and Output Settings**, deixe *Build Command*, *Output Directory*
+   e *Install Command* **vazios**, sem ligar o *Override*.
+7. Clique em **Deploy**.
 
 Em menos de um minuto você recebe um endereço tipo
 `https://gn-caldos.vercel.app`. O cardápio fica na raiz e o painel em `/admin`.
@@ -146,6 +158,20 @@ Cada vez que você enviar uma mudança para o GitHub, a Vercel republica sozinha
 
 **Domínio próprio** (ex.: `gncaldos.com.br`): no projeto, **Settings** →
 **Domains** → *Add*, e siga as instruções para apontar o domínio.
+
+### Evitar que os três projetos reconstruam a cada mudança (opcional)
+
+Como os três projetos vivem no mesmo repositório, qualquer push faz os três
+publicarem de novo, mesmo quando a mudança não é deles. Para o projeto
+`gn-caldos`, vá em **Settings** → **Git** → **Ignored Build Step** e coloque:
+
+```bash
+git diff --quiet HEAD^ HEAD -- caldos/
+```
+
+A convenção da Vercel é: terminar com código **0 cancela** o build e código
+**1 segue** com ele. Assim, o site só é republicado quando algo dentro de
+`caldos/` mudou. É só economia de tempo de build — sem isso nada quebra.
 
 ### Outras opções de hospedagem
 
@@ -227,4 +253,4 @@ os novos cadastros (passo 3.2) importa tanto.
 | Editei no painel e o cliente não vê | Você está em modo local. Veja a etiqueta no topo do painel: se disser *só neste aparelho*, faça o passo 3. |
 | A foto não aparece no modo nuvem | O balde `fotos` não foi criado. O SQL do passo 3.1 cria; rode de novo. |
 | "O navegador ficou sem espaço" | Só acontece no modo local, onde as fotos ficam no navegador. É o sinal de que já passou da hora de ligar o modo nuvem. |
-| Publiquei na Vercel e apareceu o app de finanças | O **Root Directory** não foi apontado para `caldos`. Ajuste em *Settings → General*. |
+| Abri o endereço e apareceu o app de finanças | Ou você abriu um dos dois projetos antigos (`projeto-novo01` / `projeto-novo02`), que publicam a raiz, ou o **Root Directory** do projeto novo não foi apontado para `caldos`. Confira em *Settings → General*. |
