@@ -764,6 +764,64 @@ a {
   padding-top: 10px;
 }
 
+/* dados da entrega, no pe do carrinho */
+
+.entrega {
+  border-top: 1px solid var(--borda);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.entrega__titulo {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.entrega__titulo::before {
+  content: '🛵';
+  font-size: 1rem;
+}
+
+.campo__marca {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--laranja-forte);
+}
+
+.campo__marca--leve {
+  color: #a88b79;
+  font-weight: 600;
+}
+
+.campo--erro input {
+  border-color: var(--vermelho);
+  background: #fffafa;
+}
+
+.campo--erro input:focus {
+  border-color: var(--vermelho);
+  box-shadow: 0 0 0 3px rgba(201, 42, 42, 0.18);
+}
+
+.campo--erro > span {
+  color: var(--vermelho);
+}
+
+.aviso__lista {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.aviso__lista li {
+  margin-top: 2px;
+}
+
 /* barra fixa de resumo no celular */
 
 .barra-resumo {
