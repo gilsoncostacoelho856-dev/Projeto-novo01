@@ -12,7 +12,49 @@
     itens: [],
     carrinho: {}, // { idDoItem: quantidade }
     quantidades: {}, // quantidade escolhida no cartao, antes de adicionar
+    // Dados da entrega. Ficam aqui, e nao apenas nos campos da tela, porque
+    // o rodape do carrinho e refeito a cada mudanca de quantidade — sem
+    // isso o cliente perderia o que digitou ao mexer no pedido.
+    entrega: { nome: '', endereco: '', complemento: '' },
+    erros: {}, // { chave: true } para os campos obrigatorios em falta
+    // So cobramos os campos depois da primeira tentativa de finalizar: nada
+    // de acusar falta antes de a pessoa ter tido chance de preencher.
+    tentouFinalizar: false,
   };
+
+  // Um so lugar descreve os campos: a tela, a conferencia e a mensagem do
+  // WhatsApp sao todas montadas a partir daqui.
+  var CAMPOS_ENTREGA = [
+    {
+      chave: 'nome',
+      id: 'nomeCliente',
+      rotulo: 'Seu nome',
+      dica: 'Ex.: Maria Silva',
+      autocomplete: 'name',
+      obrigatorio: true,
+      limite: 80,
+      cobranca: 'Escreva o seu nome.',
+    },
+    {
+      chave: 'endereco',
+      id: 'enderecoCliente',
+      rotulo: 'Endereço completo',
+      dica: 'Rua, número e bairro',
+      autocomplete: 'street-address',
+      obrigatorio: true,
+      limite: 160,
+      cobranca: 'Escreva o endereço com rua, número e bairro.',
+    },
+    {
+      chave: 'complemento',
+      id: 'complementoCliente',
+      rotulo: 'Complemento',
+      dica: 'Apartamento, bloco ou ponto de referência',
+      autocomplete: 'address-line2',
+      obrigatorio: false,
+      limite: 120,
+    },
+  ];
 
   var dinheiro = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -309,6 +351,9 @@
     });
 
     pe.appendChild(blocoContas(c));
+    // O rodape acabou de ser refeito: as marcas de erro voltam pelo estado,
+    // dentro de `campoEntrega`, e o aviso e redesenhado aqui.
+    pintarAvisoEntrega();
   }
 
   function linhaDoCarrinho(linha) {
@@ -398,13 +443,17 @@
     contasEl.appendChild(total);
     frag.appendChild(contasEl);
 
-    // Campos opcionais: se preenchidos, entram na mensagem do WhatsApp.
-    frag.appendChild(
-      campoTexto('nomeCliente', 'Seu nome (opcional)', 'Ex.: Maria')
-    );
-    frag.appendChild(
-      campoTexto('enderecoCliente', 'Endereço de entrega (opcional)', 'Rua, número, bairro')
-    );
+    // Dados da entrega: vao junto na mensagem do WhatsApp.
+    var entrega = criar('div', 'entrega');
+    entrega.appendChild(criar('h3', 'entrega__titulo', 'Dados para a entrega'));
+    CAMPOS_ENTREGA.forEach(function (def) {
+      entrega.appendChild(campoEntrega(def));
+    });
+    frag.appendChild(entrega);
+
+    var avisoEntrega = criar('div');
+    avisoEntrega.id = 'avisoEntrega';
+    frag.appendChild(avisoEntrega);
 
     var botao = criar('button', 'botao botao--zap');
     botao.type = 'button';
@@ -434,17 +483,54 @@
     return el;
   }
 
-  function campoTexto(id, rotulo, dica) {
-    var label = criar('label', 'campo');
-    label.htmlFor = id;
-    label.appendChild(criar('span', null, rotulo));
+  function campoEntrega(def) {
+    var comErro = !!estado.erros[def.chave];
+    var label = criar('label', 'campo' + (comErro ? ' campo--erro' : ''));
+    label.htmlFor = def.id;
+
+    var titulo = criar('span', null, def.rotulo);
+    titulo.appendChild(
+      criar(
+        'em',
+        def.obrigatorio ? 'campo__marca' : 'campo__marca campo__marca--leve',
+        def.obrigatorio ? ' obrigatório' : ' opcional'
+      )
+    );
+    label.appendChild(titulo);
+
     var input = criar('input');
     input.type = 'text';
-    input.id = id;
-    input.placeholder = dica;
-    input.autocomplete = id === 'nomeCliente' ? 'name' : 'street-address';
+    input.id = def.id;
+    input.placeholder = def.dica;
+    input.autocomplete = def.autocomplete;
+    input.maxLength = def.limite;
+    input.value = estado.entrega[def.chave];
+    if (def.obrigatorio) input.required = true;
+    input.setAttribute('aria-invalid', comErro ? 'true' : 'false');
+
+    // Guardar a cada tecla e o que faz o valor sobreviver ao redesenho do
+    // rodape quando o cliente muda uma quantidade.
+    input.addEventListener('input', function () {
+      estado.entrega[def.chave] = input.value;
+      if (estado.erros[def.chave] && input.value.trim()) {
+        delete estado.erros[def.chave];
+        label.classList.remove('campo--erro');
+        input.setAttribute('aria-invalid', 'false');
+      }
+      // O aviso acompanha o que a pessoa esta corrigindo: some quando nao
+      // falta mais nada, em vez de continuar cobrando um campo ja preenchido.
+      pintarAvisoEntrega();
+    });
+
     label.appendChild(input);
     return label;
+  }
+
+  /** Devolve os campos obrigatorios que estao em branco. */
+  function faltandoNaEntrega() {
+    return CAMPOS_ENTREGA.filter(function (def) {
+      return def.obrigatorio && !estado.entrega[def.chave].trim();
+    });
   }
 
   /* --------------------------------------------------- abrir / fechar */
@@ -472,9 +558,6 @@
   /* ------------------------------------------------------ finalizar pedido */
 
   function montarMensagem(c) {
-    var nome = (document.getElementById('nomeCliente') || {}).value || '';
-    var endereco = (document.getElementById('enderecoCliente') || {}).value || '';
-
     var partes = ['*Novo pedido — ' + estado.loja.nome + '*', ''];
 
     c.linhas.forEach(function (l) {
@@ -488,21 +571,85 @@
     if (c.taxa > 0) partes.push('Taxa de entrega: ' + dinheiro.format(c.taxa));
     partes.push('*Total: ' + dinheiro.format(c.total) + '*');
 
-    if (nome.trim()) {
-      partes.push('');
-      partes.push('Nome: ' + nome.trim());
-    }
-    if (endereco.trim()) {
-      if (!nome.trim()) partes.push('');
-      partes.push('Endereço: ' + endereco.trim());
+    partes.push('');
+    partes.push('*Entrega*');
+    partes.push('Nome: ' + estado.entrega.nome.trim());
+    partes.push('Endereço: ' + estado.entrega.endereco.trim());
+    if (estado.entrega.complemento.trim()) {
+      partes.push('Complemento: ' + estado.entrega.complemento.trim());
     }
 
     return partes.join('\n');
   }
 
+  /**
+   * Desenha (ou apaga) o aviso do que ainda falta. Sempre olha o estado atual,
+   * entao serve tanto para a tentativa de finalizar quanto para acompanhar a
+   * pessoa enquanto ela corrige.
+   */
+  function pintarAvisoEntrega() {
+    var aviso = document.getElementById('avisoEntrega');
+    if (!aviso) return;
+    aviso.textContent = '';
+    if (!estado.tentouFinalizar) return;
+
+    var faltando = faltandoNaEntrega();
+    if (!faltando.length) return;
+
+    var caixa = criar('div', 'aviso aviso--erro');
+    caixa.setAttribute('role', 'alert');
+    caixa.appendChild(
+      criar(
+        'strong',
+        null,
+        faltando.length === 1
+          ? 'Falta um dado para a entrega:'
+          : 'Faltam dados para a entrega:'
+      )
+    );
+    var lista = criar('ul', 'aviso__lista');
+    faltando.forEach(function (def) {
+      lista.appendChild(criar('li', null, def.cobranca));
+    });
+    caixa.appendChild(lista);
+    aviso.appendChild(caixa);
+  }
+
+  /** Marca os campos em falta, explica o que falta e leva o foco ao primeiro. */
+  function cobrarCamposFaltando(faltando) {
+    estado.erros = {};
+    faltando.forEach(function (def) {
+      estado.erros[def.chave] = true;
+      var input = document.getElementById(def.id);
+      if (!input) return;
+      input.setAttribute('aria-invalid', 'true');
+      if (input.parentNode) input.parentNode.classList.add('campo--erro');
+    });
+
+    pintarAvisoEntrega();
+
+    var primeiro = document.getElementById(faltando[0].id);
+    if (primeiro) {
+      primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      primeiro.focus();
+    }
+  }
+
   function finalizar() {
     var c = contas();
     if (!c.linhas.length) return;
+
+    estado.tentouFinalizar = true;
+
+    var faltando = faltandoNaEntrega();
+    if (faltando.length) {
+      cobrarCamposFaltando(faltando);
+      return;
+    }
+
+    estado.erros = {};
+    pintarAvisoEntrega();
+
     var url =
       'https://wa.me/' +
       estado.loja.whatsapp +
