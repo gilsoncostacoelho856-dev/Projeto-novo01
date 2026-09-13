@@ -1216,3 +1216,16 @@ body.tem-barra .rodape {
   word-break: break-all;
   margin: 10px 0 0;
 }
+
+/* Utilitarios usados no lugar de atributos `style=` embutidos, que a
+   Content-Security-Policy (`style-src 'self'`) bloqueia. */
+
+.volta-site {
+  margin: 16px 0 0;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.espaco-cima {
+  margin-top: 14px;
+}

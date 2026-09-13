@@ -84,9 +84,15 @@ create policy "itens: escrita autenticada"
 -- ------------------------------------------------------- fotos (Storage)
 -- Balde publico para as fotos dos caldos.
 
-insert into storage.buckets (id, name, public)
-values ('fotos', 'fotos', true)
-on conflict (id) do update set public = true;
+-- O limite de 2 MB e o tipo unico sao conferidos PELO SERVIDOR. O site ja
+-- reduz a foto para uns 100 KB antes de enviar, mas essa checagem e no
+-- navegador e pode ser contornada; esta aqui nao.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('fotos', 'fotos', true, 2097152, array['image/jpeg'])
+on conflict (id) do update
+  set public = true,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "fotos: leitura publica" on storage.objects;
 create policy "fotos: leitura publica"

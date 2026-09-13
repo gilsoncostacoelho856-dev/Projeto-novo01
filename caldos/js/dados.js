@@ -41,6 +41,22 @@
     return isFinite(n) && n > 0 ? n : 0;
   }
 
+  /**
+   * A foto e o unico campo que vira endereco (`src`) na tela, entao e o unico
+   * que precisa de mais do que escapar texto. So passam enderecos http(s) e
+   * imagens embutidas: `javascript:`, `data:text/html` e companhia viram
+   * vazio, e o cartao mostra a panelinha no lugar.
+   */
+  function fotoSegura(valor) {
+    var v = String(valor == null ? '' : valor).trim();
+    if (!v) return '';
+    if (/^https?:\/\//i.test(v)) return v;
+    if (/^data:image\/(jpeg|png|webp|gif|avif);base64,[A-Za-z0-9+/=]+$/i.test(v)) {
+      return v;
+    }
+    return '';
+  }
+
   // Normaliza um item vindo de qualquer fonte (padrao, localStorage, banco)
   // para o formato que as telas esperam. Item invalido volta como null.
   function normalizarItem(bruto, indice) {
@@ -54,7 +70,7 @@
       descricao: String(
         bruto.descricao == null ? '' : bruto.descricao
       ).trim(),
-      foto: bruto.foto ? String(bruto.foto) : '',
+      foto: fotoSegura(bruto.foto),
       ativo: bruto.ativo !== false,
       ordem:
         typeof bruto.ordem === 'number' && isFinite(bruto.ordem)
@@ -117,12 +133,46 @@
   var FOTO_LARGURA_MAX = 900;
   var FOTO_QUALIDADE = 0.72;
 
+  // Limites de entrada. Nenhuma foto de celular chega perto deles: servem
+  // para um arquivo gigante nao travar o navegador antes mesmo de comecar a
+  // reducao (o `readAsDataURL` carrega tudo na memoria de uma vez).
+  var FOTO_ARQUIVO_MAX = 12 * 1024 * 1024; // 12 MB
+  var FOTO_PIXELS_MAX = 40 * 1000 * 1000; // 40 megapixels
+
+  // SVG fica de fora de proposito: e o unico formato de imagem que pode
+  // conter script. Os outros sao dados, nao codigo.
+  var FOTO_TIPOS = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'image/avif',
+    'image/heic',
+    'image/heif',
+  ];
+
+  function megabytes(bytes) {
+    return Math.round((bytes / (1024 * 1024)) * 10) / 10;
+  }
+
   // Fotos de celular tem varios MB — grandes demais para o localStorage e
   // lentas para o cliente baixar. Reduzimos antes de guardar.
   function reduzirFoto(arquivo) {
     return new Promise(function (ok, erro) {
-      if (!arquivo || !/^image\//.test(arquivo.type)) {
-        erro(new Error('Escolha um arquivo de imagem (JPG, PNG ou WEBP).'));
+      if (!arquivo || FOTO_TIPOS.indexOf(arquivo.type) < 0) {
+        erro(new Error('Escolha uma foto em JPG, PNG ou WEBP.'));
+        return;
+      }
+      if (arquivo.size > FOTO_ARQUIVO_MAX) {
+        erro(
+          new Error(
+            'Essa foto tem ' +
+              megabytes(arquivo.size) +
+              ' MB e o limite é ' +
+              megabytes(FOTO_ARQUIVO_MAX) +
+              ' MB. Tire a foto com menos resolução ou escolha outra.'
+          )
+        );
         return;
       }
       var leitor = new FileReader();
@@ -135,6 +185,20 @@
           erro(new Error('Essa imagem parece estar corrompida.'));
         };
         img.onload = function () {
+          // Uma imagem pequena no disco pode ser enorme ao ser aberta (um PNG
+          // de 30000x30000 cabe em poucos KB e ocupa gigabytes na memoria).
+          if (img.width * img.height > FOTO_PIXELS_MAX) {
+            erro(
+              new Error(
+                'Essa imagem é grande demais (' +
+                  img.width +
+                  '×' +
+                  img.height +
+                  ' pontos). Escolha uma foto menor.'
+              )
+            );
+            return;
+          }
           var escala = Math.min(1, FOTO_LARGURA_MAX / img.width);
           var largura = Math.round(img.width * escala);
           var altura = Math.round(img.height * escala);
@@ -498,8 +562,18 @@
         });
       }
       return sha256(senha).then(function (hash) {
+        // Sem `crypto.subtle` nao da para conferir a senha. Recusamos a
+        // entrada: ter uma senha reserva no codigo seria uma porta dos
+        // fundos que vale para qualquer pessoa, nao so para o dono.
+        if (!hash) {
+          throw new Error(
+            'Para entrar no painel, abra o site por um endereço https:// ' +
+              '(ou localhost). Em endereços comuns o navegador não oferece a ' +
+              'função de segurança que confere a senha.'
+          );
+        }
         var esperado = CFG.senhaAdminHash || '';
-        var ok = hash ? hash === esperado : senha === 'caldos123';
+        var ok = !!esperado && hash === esperado;
         if (ok) {
           try {
             sessionStorage.setItem(CHAVE_SESSAO, '1');
