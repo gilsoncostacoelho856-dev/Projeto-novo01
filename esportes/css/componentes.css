@@ -1,0 +1,1039 @@
+/* =====================================================================
+   COMPONENTES
+   Cards de partida, escudos, tira de forma, barras de probabilidade,
+   bilhete de aposta, tabelas, esqueletos e estados de tela.
+   ===================================================================== */
+
+/* ================================================================
+   ESCUDO  (com plano B de iniciais quando a imagem morre)
+   ================================================================ */
+
+.escudo {
+  --tam: 40px;
+  position: relative;
+  width: var(--tam);
+  height: var(--tam);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--superficie-3);
+  overflow: hidden;
+}
+
+.escudo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
+  background: var(--superficie-3);
+}
+
+.escudo-iniciais {
+  font-size: calc(var(--tam) * 0.34);
+  font-weight: 700;
+  color: var(--texto-fraco);
+  letter-spacing: -0.02em;
+}
+
+/* ================================================================
+   CARD DE PARTIDA
+   ================================================================ */
+
+.card-jogo {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.12s;
+}
+
+.card-jogo:hover {
+  border-color: var(--borda-clara);
+}
+
+.card-jogo.ao-vivo {
+  border-color: var(--verde-borda);
+  box-shadow: 0 0 0 1px var(--verde-fundo);
+}
+
+.card-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 13px;
+  background: var(--preto);
+  border-bottom: 1px solid var(--borda);
+}
+
+.card-liga {
+  font-size: 11px;
+  color: var(--texto-fraco);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selo {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--superficie-2);
+  color: var(--texto-medio);
+  font-family: var(--fonte-num);
+}
+
+.selo-cinza {
+  color: var(--texto-fraco);
+}
+
+.selo-vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--vermelho-fundo);
+  color: #ff8b85;
+  font-family: var(--fonte);
+  letter-spacing: 0.04em;
+}
+
+.ponto-vivo {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vermelho);
+  animation: pulsar 1.4s infinite;
+}
+
+@keyframes pulsar {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.card-times {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 13px;
+}
+
+.card-time {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.card-times > .card-time:last-child {
+  flex-direction: row-reverse;
+}
+
+.card-time-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--texto);
+  flex: 1;
+}
+
+.card-times > .card-time:last-child .card-time-link {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.card-time-link:hover {
+  text-decoration: none;
+  color: var(--verde);
+}
+
+.card-time-nome {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.card-placar {
+  font-family: var(--fonte-num);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--texto);
+  flex-shrink: 0;
+}
+
+.ao-vivo .card-placar {
+  color: var(--verde);
+}
+
+.card-versus {
+  font-size: 11px;
+  color: var(--texto-fraco);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.card-pe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px;
+  border-top: 1px solid var(--borda);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.card-hora {
+  font-size: 12.5px;
+  color: var(--texto-medio);
+  font-weight: 500;
+}
+
+.card-local {
+  font-size: 11px;
+  color: var(--texto-fraco);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ================================================================
+   TIRA DE FORMA  (V E D)
+   ================================================================ */
+
+.tira-forma {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.forma-bola {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--preto);
+  flex-shrink: 0;
+}
+
+.forma-bola.vitoria {
+  background: var(--verde);
+}
+
+.forma-bola.empate {
+  background: var(--texto-fraco);
+}
+
+.forma-bola.derrota {
+  background: var(--vermelho);
+  color: #fff;
+}
+
+.forma-vazio {
+  font-size: 12px;
+  color: var(--texto-fraco);
+  font-style: italic;
+}
+
+/* ================================================================
+   BARRAS DE PROBABILIDADE
+   ================================================================ */
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.barra-trilho {
+  flex: 1;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--superficie-3);
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.barra-preenchida {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--verde);
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.barra-preenchida.nivel-alta {
+  background: var(--verde);
+}
+
+.barra-preenchida.nivel-media {
+  background: var(--amarelo);
+}
+
+.barra-preenchida.nivel-baixa {
+  background: var(--vermelho);
+}
+
+.barra-valor {
+  font-family: var(--fonte-num);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--texto-medio);
+  min-width: 46px;
+  text-align: right;
+}
+
+/* --- barra de tres fatias (casa / empate / fora) --- */
+
+.tripla-barra {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--superficie-3);
+  margin-bottom: 10px;
+}
+
+.tripla-fatia {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.fatia-casa {
+  background: var(--verde);
+}
+
+.fatia-empate {
+  background: var(--texto-fraco);
+}
+
+.fatia-fora {
+  background: var(--azul);
+}
+
+.tripla-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  min-width: 0;
+}
+
+.legenda-cor {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.cor-casa {
+  background: var(--verde);
+}
+
+.cor-empate {
+  background: var(--texto-fraco);
+}
+
+.cor-fora {
+  background: var(--azul);
+}
+
+.legenda-nome {
+  color: var(--texto-fraco);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legenda-valor {
+  font-family: var(--fonte-num);
+  color: var(--texto);
+}
+
+/* ================================================================
+   BILHETE DE APOSTA  ("Criar Aposta")
+   O visual e inspirado na tela de bilhete das casas de aposta, para
+   voce bater o olho e conferir contra a odd real.
+   ================================================================ */
+
+.bilhete {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+}
+
+.bilhete.destaque {
+  border-color: var(--verde-borda);
+  box-shadow: 0 0 0 1px var(--verde-fundo), var(--sombra);
+}
+
+.bilhete-topo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--borda);
+  background: var(--preto);
+}
+
+.bilhete-tipo {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--verde);
+  text-transform: uppercase;
+}
+
+.bilhete-tipo.simples {
+  color: var(--texto-medio);
+}
+
+.bilhete-odd {
+  margin-left: auto;
+  font-family: var(--fonte-num);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--texto);
+  letter-spacing: -0.02em;
+}
+
+/* --- as pernas da combinacao, com o fio ligando --- */
+
+.bilhete-pernas {
+  list-style: none;
+  padding: 6px 14px 10px;
+}
+
+.perna {
+  position: relative;
+  padding: 10px 0 10px 22px;
+}
+
+.perna::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--texto-fraco);
+  background: var(--superficie);
+}
+
+/* fio vertical entre uma perna e a seguinte */
+.perna:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 27px;
+  bottom: -8px;
+  width: 1px;
+  background: var(--borda-clara);
+}
+
+.perna-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.perna-mercado {
+  font-size: 11.5px;
+  color: var(--texto-fraco);
+  margin-top: 2px;
+}
+
+.perna-odd {
+  font-family: var(--fonte-num);
+  font-size: 12px;
+  color: var(--texto-medio);
+  margin-top: 3px;
+}
+
+.bilhete-jogo {
+  padding: 11px 14px;
+  border-top: 1px solid var(--borda);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.bilhete-jogo-nome {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-medio);
+}
+
+.bilhete-jogo-hora {
+  font-size: 11.5px;
+  color: var(--texto-fraco);
+  margin-top: 2px;
+}
+
+.bilhete-rodape {
+  padding: 12px 14px;
+  border-top: 1px solid var(--borda);
+}
+
+.bilhete-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bilhete-rotulo {
+  font-size: 11.5px;
+  color: var(--texto-fraco);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bilhete-nota {
+  font-size: 12px;
+  color: var(--texto-fraco);
+  line-height: 1.5;
+  border-top: 1px dashed var(--borda);
+  padding-top: 9px;
+  margin-top: 9px;
+}
+
+/* --- a regra de valor: so vale se a casa pagar mais que a justa --- */
+
+.valor-dica {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: var(--raio-p);
+  background: var(--verde-fundo);
+  border: 1px solid var(--verde-borda);
+  font-size: 12px;
+  color: var(--texto-medio);
+  line-height: 1.5;
+}
+
+.valor-dica strong {
+  color: var(--verde);
+  font-family: var(--fonte-num);
+}
+
+/* ================================================================
+   ETIQUETAS DE NIVEL
+   ================================================================ */
+
+.etiqueta {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.etiqueta.alta {
+  background: var(--verde-fundo);
+  color: var(--verde);
+  border: 1px solid var(--verde-borda);
+}
+
+.etiqueta.media {
+  background: var(--amarelo-fundo);
+  color: var(--amarelo);
+  border: 1px solid rgba(255, 197, 61, 0.3);
+}
+
+.etiqueta.baixa {
+  background: var(--vermelho-fundo);
+  color: var(--vermelho);
+  border: 1px solid rgba(255, 95, 87, 0.3);
+}
+
+/* ================================================================
+   PAINEIS E DADOS
+   ================================================================ */
+
+.painel {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 16px;
+}
+
+.painel-titulo {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--texto-fraco);
+  margin-bottom: 13px;
+  font-weight: 700;
+}
+
+.dado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--borda);
+  font-size: 13.5px;
+}
+
+.dado:last-child {
+  border-bottom: 0;
+}
+
+.dado-rotulo {
+  color: var(--texto-fraco);
+  flex-shrink: 0;
+}
+
+.dado-valor {
+  font-weight: 600;
+  text-align: right;
+  min-width: 0;
+}
+
+/* --- numeros grandes --- */
+
+.metricas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 560px) {
+  .metricas {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.metrica {
+  background: var(--preto);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-p);
+  padding: 12px;
+  text-align: center;
+}
+
+.metrica-valor {
+  font-family: var(--fonte-num);
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--verde);
+  line-height: 1.1;
+}
+
+.metrica-rotulo {
+  font-size: 10.5px;
+  color: var(--texto-fraco);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+/* ================================================================
+   CABECALHO DE ENTIDADE  (time / jogador)
+   ================================================================ */
+
+.perfil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 22px 16px;
+  margin-bottom: 22px;
+}
+
+@media (min-width: 640px) {
+  .perfil {
+    flex-direction: row;
+    text-align: left;
+    gap: 20px;
+    padding: 24px;
+  }
+}
+
+.perfil-nome {
+  font-size: 23px;
+  margin-bottom: 4px;
+}
+
+.perfil-sub {
+  font-size: 13.5px;
+  color: var(--texto-fraco);
+}
+
+.perfil-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .perfil-tags {
+    justify-content: flex-start;
+  }
+}
+
+.tag {
+  font-size: 11.5px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  background: var(--superficie-2);
+  color: var(--texto-medio);
+  border: 1px solid var(--borda);
+}
+
+/* ================================================================
+   LISTA DE JOGADORES
+   ================================================================ */
+
+.jogadores {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+}
+
+.jogador-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-p);
+  color: var(--texto);
+  min-width: 0;
+}
+
+.jogador-item:hover {
+  border-color: var(--verde-borda);
+  text-decoration: none;
+}
+
+.jogador-nome {
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jogador-pos {
+  font-size: 11.5px;
+  color: var(--texto-fraco);
+}
+
+.jogador-num {
+  margin-left: auto;
+  font-family: var(--fonte-num);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--texto-fraco);
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   TABELAS  (confrontos, placares provaveis)
+   ================================================================ */
+
+.tabela-caixa {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 340px;
+}
+
+.tabela th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texto-fraco);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--borda-clara);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tabela td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.tabela tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabela .num {
+  font-family: var(--fonte-num);
+  text-align: center;
+  font-weight: 600;
+}
+
+.tabela .destaque-v {
+  color: var(--verde);
+}
+
+.tabela .destaque-d {
+  color: var(--vermelho);
+}
+
+/* ================================================================
+   FAIXAS DE AVISO
+   ================================================================ */
+
+.faixa-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: var(--raio-p);
+  background: var(--amarelo-fundo);
+  border: 1px solid rgba(255, 197, 61, 0.28);
+  color: #ffd97a;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.faixa-premium {
+  background: var(--superficie-2);
+  border-color: var(--borda-clara);
+  color: var(--texto-medio);
+}
+
+/* --- o aviso grande do modelo, na pagina de apostas --- */
+
+.aviso-modelo {
+  background: var(--superficie);
+  border: 1px solid var(--borda-clara);
+  border-left: 3px solid var(--amarelo);
+  border-radius: var(--raio-p);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.aviso-modelo h3 {
+  font-size: 13px;
+  color: var(--amarelo);
+  margin-bottom: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.aviso-modelo p {
+  font-size: 13px;
+  color: var(--texto-medio);
+  line-height: 1.6;
+}
+
+.aviso-modelo p + p {
+  margin-top: 7px;
+}
+
+/* ================================================================
+   ESTADOS
+   ================================================================ */
+
+.estado {
+  text-align: center;
+  padding: 42px 20px;
+  background: var(--superficie);
+  border: 1px dashed var(--borda-clara);
+  border-radius: var(--raio);
+  grid-column: 1 / -1;
+}
+
+.estado-icone {
+  font-size: 34px;
+  margin-bottom: 10px;
+  opacity: 0.75;
+}
+
+.estado-titulo {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.estado-texto {
+  font-size: 13.5px;
+  color: var(--texto-fraco);
+  max-width: 420px;
+  margin: 0 auto 14px;
+  line-height: 1.6;
+}
+
+.estado-erro {
+  border-color: rgba(255, 95, 87, 0.3);
+}
+
+/* --- esqueleto de carregamento --- */
+
+.esqueleto {
+  height: 168px;
+  border-radius: var(--raio);
+  background: linear-gradient(100deg, var(--superficie) 28%, var(--superficie-2) 42%, var(--superficie) 56%);
+  background-size: 260% 100%;
+  animation: brilho 1.3s infinite linear;
+}
+
+.esqueleto-linha {
+  height: 62px;
+}
+
+.esqueleto-alto {
+  height: 240px;
+}
+
+@keyframes brilho {
+  from {
+    background-position: 160% 0;
+  }
+  to {
+    background-position: -60% 0;
+  }
+}
+
+/* --- progresso da analise em lote --- */
+
+.progresso {
+  margin-bottom: 18px;
+}
+
+.progresso-texto {
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+  margin-bottom: 7px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.progresso-trilho {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--superficie-3);
+  overflow: hidden;
+}
+
+.progresso-preenchido {
+  height: 100%;
+  background: var(--verde);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ================================================================
+   DUAS COLUNAS  (analise)
+   ================================================================ */
+
+.duas-colunas {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 760px) {
+  .duas-colunas {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.confronto-cabecalho {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 20px 14px;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.confronto-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--texto);
+}
+
+.confronto-time:hover {
+  text-decoration: none;
+  color: var(--verde);
+}
+
+.confronto-time-nome {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.confronto-meio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.confronto-vs {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--texto-fraco);
+}
+
+.confronto-hora {
+  font-size: 11.5px;
+  color: var(--texto-medio);
+  white-space: nowrap;
+}
