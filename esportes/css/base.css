@@ -1,0 +1,779 @@
+/* =====================================================================
+   BASE  —  variaveis, reset, tipografia, layout, cabecalho e rodape
+   Tema escuro. Verde sobre preto.
+   Escrito mobile primeiro: o layout de celular e o padrao, e as
+   media queries so acrescentam espaco quando a tela e maior.
+   ===================================================================== */
+
+:root {
+  /* --- cores --- */
+  --preto: #06080a;
+  --fundo: #0a0d10;
+  --superficie: #101519;
+  --superficie-2: #161d23;
+  --superficie-3: #1d262e;
+  --borda: #222e37;
+  --borda-clara: #2e3d48;
+
+  --verde: #00e07a;
+  --verde-forte: #00ff8c;
+  --verde-escuro: #00a85c;
+  --verde-fundo: rgba(0, 224, 122, 0.1);
+  --verde-borda: rgba(0, 224, 122, 0.32);
+
+  --texto: #e9f0f4;
+  --texto-medio: #a9bbc7;
+  --texto-fraco: #6f8492;
+
+  --amarelo: #ffc53d;
+  --amarelo-fundo: rgba(255, 197, 61, 0.1);
+  --vermelho: #ff5f57;
+  --vermelho-fundo: rgba(255, 95, 87, 0.1);
+  --azul: #4da3ff;
+
+  /* --- medidas --- */
+  --raio: 14px;
+  --raio-p: 9px;
+  --raio-g: 20px;
+  --largura: 1180px;
+  --barra-altura: 62px;
+
+  --sombra: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --sombra-alta: 0 14px 40px rgba(0, 0, 0, 0.55);
+
+  --fonte: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fonte-num: 'SF Mono', 'Roboto Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* ================================================================
+   RESET
+   ================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--fonte);
+  background: var(--fundo);
+  color: var(--texto);
+  line-height: 1.55;
+  font-size: 15px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* espaco para a barra fixa de jogo responsavel nao cobrir conteudo */
+  padding-bottom: calc(var(--barra-altura) + 8px);
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: var(--verde);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--verde);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ================================================================
+   PORTAO DE IDADE  —  o bloqueio 18+
+
+   Enquanto <html> tiver a classe `bloqueado`, tudo que nao for o modal
+   fica invisivel. A classe e posta por um script no <head>, antes de
+   qualquer pintura, entao nao existe piscada de conteudo liberado.
+   ================================================================ */
+
+html.bloqueado body > *:not(.portao) {
+  visibility: hidden !important;
+}
+
+html.bloqueado body {
+  overflow: hidden;
+}
+
+.portao {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: radial-gradient(circle at 50% 0%, #0d1a14 0%, var(--preto) 62%);
+  overflow-y: auto;
+}
+
+.portao.saindo {
+  opacity: 0;
+  transition: opacity 0.24s ease;
+}
+
+.portao-caixa {
+  width: 100%;
+  max-width: 460px;
+  background: var(--superficie);
+  border: 1px solid var(--borda-clara);
+  border-radius: var(--raio-g);
+  padding: 32px 26px 26px;
+  text-align: center;
+  box-shadow: var(--sombra-alta);
+  animation: subir 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+.portao-selo {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--verde);
+  background: var(--verde-fundo);
+  border: 2px solid var(--verde-borda);
+}
+
+.portao-selo-bloqueado {
+  color: var(--vermelho);
+  background: var(--vermelho-fundo);
+  border-color: rgba(255, 95, 87, 0.35);
+  font-size: 30px;
+}
+
+.portao-titulo {
+  font-size: 21px;
+  margin-bottom: 12px;
+}
+
+.portao-texto {
+  color: var(--texto-medio);
+  font-size: 14.5px;
+  margin-bottom: 18px;
+}
+
+.portao-lista {
+  list-style: none;
+  text-align: left;
+  background: var(--preto);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 14px 16px;
+  margin-bottom: 22px;
+}
+
+.portao-lista li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 13.5px;
+  color: var(--texto-medio);
+  margin: 7px 0;
+}
+
+.portao-lista li::before {
+  content: '\2022';
+  position: absolute;
+  left: 4px;
+  color: var(--verde);
+  font-weight: 700;
+}
+
+.portao-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.portao-ajuda {
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+  border-top: 1px solid var(--borda);
+  padding-top: 15px;
+}
+
+/* ================================================================
+   BOTOES
+   ================================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 18px;
+  border-radius: var(--raio-p);
+  border: 1px solid transparent;
+  background: var(--superficie-2);
+  color: var(--texto);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.08s;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  text-decoration: none;
+  background: var(--superficie-3);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-principal {
+  background: var(--verde);
+  color: #04120b;
+  font-weight: 700;
+}
+
+.btn-principal:hover {
+  background: var(--verde-forte);
+}
+
+.btn-contorno {
+  background: transparent;
+  border-color: var(--borda-clara);
+  color: var(--texto-medio);
+}
+
+.btn-contorno:hover {
+  border-color: var(--verde-borda);
+  color: var(--texto);
+  background: transparent;
+}
+
+.btn-mini {
+  padding: 7px 13px;
+  font-size: 12.5px;
+  border: 1px solid var(--borda-clara);
+  background: transparent;
+  color: var(--texto-medio);
+}
+
+.btn-mini:hover {
+  border-color: var(--verde-borda);
+  color: var(--verde);
+  background: var(--verde-fundo);
+}
+
+.btn[disabled],
+.btn[aria-disabled='true'] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ================================================================
+   CABECALHO
+   ================================================================ */
+
+.cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: rgba(10, 13, 16, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--borda);
+}
+
+.cabecalho-interno {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--texto);
+  flex-shrink: 0;
+}
+
+.marca:hover {
+  text-decoration: none;
+}
+
+.marca-icone {
+  color: var(--verde);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.marca-texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.marca-texto strong {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.marca-texto small {
+  font-size: 10px;
+  color: var(--texto-fraco);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.menu {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.menu::-webkit-scrollbar {
+  display: none;
+}
+
+.menu-item {
+  padding: 7px 12px;
+  border-radius: var(--raio-p);
+  color: var(--texto-medio);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.menu-item:hover {
+  background: var(--superficie-2);
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.menu-item.ativo {
+  background: var(--verde-fundo);
+  color: var(--verde);
+}
+
+.selo-18 {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 4px 7px;
+  border-radius: 5px;
+  color: var(--verde);
+  background: var(--verde-fundo);
+  border: 1px solid var(--verde-borda);
+}
+
+/* Em tela estreita o menu nao cabe na mesma linha da marca: em vez de
+   cortar o texto atras do selo 18+, ele desce para uma linha propria. */
+@media (max-width: 599px) {
+  .cabecalho-interno {
+    flex-wrap: wrap;
+    padding-bottom: 7px;
+  }
+
+  .selo-18 {
+    margin-left: auto;
+  }
+
+  .menu {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--borda);
+  }
+}
+
+/* ================================================================
+   LAYOUT DE PAGINA
+   ================================================================ */
+
+.pagina {
+  flex: 1;
+  width: 100%;
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.secao {
+  margin-bottom: 34px;
+}
+
+.secao-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+
+.secao-titulo {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.secao-sub {
+  font-size: 13px;
+  color: var(--texto-fraco);
+}
+
+.grade {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 620px) {
+  .grade {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+/* ================================================================
+   FILTROS
+   ================================================================ */
+
+.filtros {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 14px;
+  margin-bottom: 22px;
+}
+
+.filtros-linha {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 680px) {
+  .filtros-linha {
+    grid-template-columns: repeat(3, 1fr) auto;
+    align-items: end;
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.campo-rotulo {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--texto-fraco);
+  font-weight: 600;
+}
+
+.campo select,
+.campo input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--raio-p);
+  border: 1px solid var(--borda-clara);
+  background: var(--preto);
+  color: var(--texto);
+  font-size: 14px;
+  /* impede o zoom automatico do iOS ao focar um campo */
+  min-height: 42px;
+}
+
+.campo select:focus,
+.campo input:focus {
+  border-color: var(--verde-borda);
+  outline: none;
+}
+
+.chips {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 12px 0 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex-shrink: 0;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--borda-clara);
+  background: var(--superficie);
+  color: var(--texto-medio);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--verde-borda);
+  color: var(--texto);
+}
+
+.chip.ativo {
+  background: var(--verde-fundo);
+  border-color: var(--verde-borda);
+  color: var(--verde);
+  font-weight: 600;
+}
+
+/* ================================================================
+   RODAPE
+   ================================================================ */
+
+.rodape {
+  background: var(--preto);
+  border-top: 1px solid var(--borda);
+  margin-top: auto;
+}
+
+.rodape-interno {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 32px 16px 24px;
+  display: grid;
+  gap: 26px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 760px) {
+  .rodape-interno {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 40px;
+  }
+}
+
+.rodape-titulo {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--verde);
+  margin-bottom: 11px;
+}
+
+.rodape-texto {
+  font-size: 13px;
+  color: var(--texto-fraco);
+  line-height: 1.65;
+}
+
+.rodape-lista {
+  list-style: none;
+}
+
+.rodape-lista li {
+  font-size: 13px;
+  color: var(--texto-fraco);
+  margin: 6px 0;
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.rodape-lista li::before {
+  content: '\2013';
+  position: absolute;
+  left: 0;
+  color: var(--verde-escuro);
+}
+
+.rodape-links li::before {
+  content: '\2192';
+}
+
+.rodape-base {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 15px 16px;
+  border-top: 1px solid var(--borda);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  color: var(--texto-fraco);
+  font-size: 11.5px;
+}
+
+/* ================================================================
+   BARRA FIXA DE JOGO RESPONSAVEL
+   Obrigatoria. Nao remova, nao esconda em mobile.
+   ================================================================ */
+
+.barra-responsavel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  background: linear-gradient(180deg, rgba(6, 8, 10, 0.97), var(--preto));
+  border-top: 2px solid var(--verde-escuro);
+  backdrop-filter: blur(10px);
+}
+
+.barra-responsavel-interno {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--barra-altura);
+}
+
+.barra-18 {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 5px;
+  color: var(--preto);
+  background: var(--verde);
+}
+
+.barra-texto {
+  flex: 1;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--texto-medio);
+  min-width: 0;
+}
+
+.barra-link {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--verde);
+  border: 1px solid var(--verde-borda);
+  padding: 6px 11px;
+  border-radius: var(--raio-p);
+}
+
+.barra-link:hover {
+  background: var(--verde-fundo);
+  text-decoration: none;
+}
+
+@media (min-width: 560px) {
+  .barra-texto {
+    font-size: 12.5px;
+  }
+}
+
+/* ================================================================
+   TOASTS
+   ================================================================ */
+
+.pilha-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--barra-altura) + 14px);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(420px, calc(100vw - 28px));
+}
+
+.toast {
+  background: var(--superficie-3);
+  border: 1px solid var(--borda-clara);
+  border-left: 3px solid var(--verde);
+  border-radius: var(--raio-p);
+  padding: 11px 14px;
+  font-size: 13px;
+  box-shadow: var(--sombra-alta);
+  animation: subir 0.25s ease;
+}
+
+.toast-erro {
+  border-left-color: var(--vermelho);
+}
+
+.toast.saindo {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* ================================================================
+   ACESSIBILIDADE
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
