@@ -121,74 +121,21 @@ var CONFIG = {
   ],
 
   /* ------------------------------------------------------------------
-     6) MODELO ESTATISTICO
+     6) ESTATISTICAS
      ------------------------------------------------------------------
-     Os numeros que o modelo usa para calcular o indice de confianca.
-     Mexer aqui muda o comportamento da pagina "Apostas do Dia".
+     Quantos jogos entram nas contagens factuais das paginas.
+
+     Repare no que NAO existe mais aqui: pesos de modelo, fator de
+     mando, teto de confianca e odd minima. O site nao calcula mais
+     probabilidade nem odd — so conta o que a API devolve. O historico
+     dessa decisao esta no cabecalho de js/estatisticas.js.
      ------------------------------------------------------------------ */
-  modelo: {
-    // Peso de cada ingrediente no calculo da forca de um time.
-    // A soma precisa dar 1.
-    pesos: {
-      forma: 0.45, // como o time vem jogando (ultimos 5)
-      confrontos: 0.28, // historico direto contra esse adversario
-      gols: 0.27, // ataque e defesa (media de gols)
-    },
+  estatisticas: {
+    // Quantos jogos recentes entram no retrospecto de cada equipe.
+    janelaJogos: 5,
 
-    // Vantagem de jogar em casa. 1.12 = +12% na forca do mandante.
-    // Em esportes sem mando claro (MMA, tenis) o site ignora isso.
-    fatorCasa: 1.12,
-
-    // Teto do indice de confianca mostrado na tela.
-    // Nenhum modelo honesto crava 100%: sempre existe zebra.
-    confiancaMaxima: 92,
-
-    // So mostra uma sugestao se ela passar desse indice.
-    confiancaMinima: 55,
-
-    // Quantos jogos a pagina "Apostas do Dia" analisa por vez.
-    // Cada jogo custa ~3 chamadas de API. Suba isso so com chave paga.
-    maxJogosAnalisados: 12,
-
-    // Quantos jogos passados entram na conta de forma recente.
-    janelaForma: 5,
-
-    // Quantos confrontos diretos entram na conta.
+    // Quantos confrontos diretos a tabela mostra.
     janelaConfrontos: 10,
-
-    // Placar maximo considerado na matriz de Poisson.
-    maxGolsMatriz: 8,
-  },
-
-  /* ------------------------------------------------------------------
-     6b) APOSTAS SUGERIDAS  —  faixa de odd e combinacoes
-     ------------------------------------------------------------------
-     ATENCAO, isto muda como voce le a tela:
-
-     A TheSportsDB NAO fornece odds. O numero que o site mostra e a
-     ODD JUSTA do modelo — o inverso da probabilidade calculada
-     (probabilidade 60% => odd justa 1.67).
-
-     Como usar na pratica: compare com a odd da casa de apostas.
-       casa paga ACIMA da odd justa  -> existe valor a favor do apostador
-       casa paga ABAIXO da odd justa -> a casa esta com a vantagem
-
-     `oddMinima` corta as sugestoes obvias demais: dupla chance a 92%
-     paga 1,08 e nao serve para nada. 1.30 e um piso razoavel.
-     ------------------------------------------------------------------ */
-  apostas: {
-    oddMinima: 1.3,
-    oddMaxima: 5.0,
-
-    // Quantas selecoes uma combinacao "Criar Aposta" pode ter.
-    maxPernasCombo: 3,
-
-    // Quantas combinacoes o site monta por jogo.
-    combosPorJogo: 2,
-
-    // Faixa de odd que as combinacoes tentam alcancar.
-    comboOddMinima: 1.4,
-    comboOddMaxima: 4.0,
   },
 
   /* ------------------------------------------------------------------
@@ -222,5 +169,4 @@ var CONFIG = {
 /* Congela para ninguem sobrescrever a chave por acidente em runtime. */
 if (typeof Object.freeze === 'function') {
   Object.freeze(CONFIG.api);
-  Object.freeze(CONFIG.modelo.pesos);
 }

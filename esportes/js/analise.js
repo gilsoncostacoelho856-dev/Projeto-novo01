@@ -1,19 +1,21 @@
 /* =====================================================================
-   PAGINA DE ANALISE DE UMA PARTIDA
+   PAGINA DE COMPARACAO DE UMA PARTIDA
 
-   Junta em uma tela: confrontos diretos, forma recente dos dois times,
-   medias de gols, leitura de probabilidade e as sugestoes de aposta.
+   Mostra, lado a lado, o retrospecto recente das duas equipes e o
+   historico de confrontos entre elas. Todo numero desta pagina vem de
+   contar os placares que a API devolveu, e a lista de jogos fica logo
+   abaixo de cada contagem justamente para voce conferir.
 
-   A pagina precisa de ate 5 chamadas de API. Todas passam pela fila do
-   api.js, entao nunca disparam de uma vez so.
+   Esta pagina NAO indica em que apostar, nao calcula probabilidade e
+   nao exibe odd. O motivo esta no cabecalho de js/estatisticas.js.
    ===================================================================== */
 
 (function (global) {
   'use strict';
 
-  var C = global.CONFIG;
   var U = global.UI;
   var Api = global.Api;
+  var Est = global.Estatisticas;
   var criar = U.criar;
 
   var conteudo;
@@ -23,7 +25,7 @@
 
     var idEvento = U.parametro('evento');
     if (!idEvento) {
-      mostrarErro('Nenhuma partida escolhida.', 'Volte para a lista de jogos e clique em "Ver análise".');
+      mostrarErro('Nenhuma partida escolhida.', 'Volte para a lista de jogos e clique em "Comparar equipes".');
       return;
     }
 
@@ -40,9 +42,7 @@
 
     Api.evento(idEvento)
       .then(function (r) {
-        if (!r.dados) {
-          throw new Api.ErroApi('Partida não encontrada na base de dados.', 'formato');
-        }
+        if (!r.dados) throw new Api.ErroApi('Partida não encontrada na base de dados.', 'formato');
         return carregarContexto(r.dados);
       })
       .catch(function (erro) {
@@ -53,38 +53,30 @@
   }
 
   function carregarContexto(ev) {
-    /* Sem id de time nao da para buscar historico. Acontece em esportes
-       individuais e em jogos muito antigos da base. */
     var temIds = ev.casa.id && ev.fora.id;
 
-    var promessas = [
+    return Promise.all([
       temIds ? Api.ultimosDoTime(ev.casa.id).catch(vazio) : Promise.resolve({ dados: [] }),
       temIds ? Api.ultimosDoTime(ev.fora.id).catch(vazio) : Promise.resolve({ dados: [] }),
       Api.confrontos(ev.casa.nome, ev.fora.nome, ev.casa.id, ev.fora.id).catch(vazio),
-    ];
-
-    return Promise.all(promessas).then(function (res) {
-      var ultimosCasa = res[0].dados;
-      var ultimosFora = res[1].dados;
-      var h2h = res[2].dados;
-
-      /* O jogo que estamos analisando nao pode entrar na propria conta. */
-      var semEle = function (lista) {
+    ]).then(function (res) {
+      /* A propria partida nao entra no retrospecto dela mesma. */
+      var semEla = function (lista) {
         return lista.filter(function (j) {
           return j.id !== ev.id;
         });
       };
 
-      var analise = global.Modelo.analisar({
+      var comparacao = Est.comparar({
         casa: ev.casa,
         fora: ev.fora,
-        ultimosCasa: semEle(ultimosCasa),
-        ultimosFora: semEle(ultimosFora),
-        confrontos: semEle(h2h),
+        ultimosCasa: semEla(res[0].dados),
+        ultimosFora: semEla(res[1].dados),
+        confrontos: semEla(res[2].dados),
         esporte: ev.esporte,
       });
 
-      desenhar(ev, analise, res[2].metodo);
+      desenhar(ev, comparacao, res[2].metodo);
     });
   }
 
@@ -96,33 +88,21 @@
      DESENHO
      ================================================================ */
 
-  function desenhar(ev, analise, metodoH2h) {
+  function desenhar(ev, comp, metodoH2h) {
     U.limpar(conteudo);
 
     conteudo.appendChild(cabecalhoConfronto(ev));
-
-    if (ev.temPlacar) {
-      conteudo.appendChild(
-        U.avisoDados(
-          'Esta partida já tem placar registrado. A análise abaixo usa apenas os jogos ' +
-            'anteriores a ela, mas serve mais como estudo do que como sugestão.'
-        )
-      );
-    }
-
-    conteudo.appendChild(secaoSugestoes(ev, analise));
-    conteudo.appendChild(secaoProbabilidades(ev, analise));
-    conteudo.appendChild(secaoForma(ev, analise));
-    conteudo.appendChild(secaoConfrontos(ev, analise, metodoH2h));
-    conteudo.appendChild(secaoEstatisticas(ev, analise));
-    conteudo.appendChild(secaoComoLer(analise));
+    conteudo.appendChild(notaDeEscopo());
+    conteudo.appendChild(secaoRetrospecto(ev, comp));
+    conteudo.appendChild(secaoGols(ev, comp));
+    conteudo.appendChild(secaoConfrontos(ev, comp, metodoH2h));
+    conteudo.appendChild(secaoFicha(ev));
   }
 
   /* ----------------------------------------------- cabecalho ------ */
 
   function cabecalhoConfronto(ev) {
     var caixa = criar('div.confronto-cabecalho');
-
     caixa.appendChild(ladoConfronto(ev.casa));
 
     var meio = criar('div.confronto-meio');
@@ -147,170 +127,85 @@
     return caixa;
   }
 
-  /* ---------------------------------------------- sugestoes ------- */
+  /* ----------------------------------------------- nota ----------- */
 
-  function secaoSugestoes(ev, analise) {
-    var s = criar('section.secao');
-    s.appendChild(
-      U.secao(
-        '🎯 Sugestões para esta partida',
-        'Ordenadas por índice de confiança, apenas com odd justa a partir de ' +
-          global.Bilhete.formatarOdd(C.apostas.oddMinima) + '.'
+  /**
+   * Fica no topo, antes dos numeros, e nao no rodape.
+   * Aviso que so aparece depois que a pessoa ja leu tudo nao serve
+   * para nada.
+   */
+  function notaDeEscopo() {
+    var aviso = criar('div.aviso-modelo');
+    aviso.appendChild(criar('h3', 'O que esta página mostra'));
+    aviso.appendChild(
+      criar(
+        'p',
+        'Apenas contagens dos jogos que a TheSportsDB registrou: quantas vitórias, empates e ' +
+          'derrotas, quantos gols, e os placares dos confrontos anteriores. A lista de jogos fica ' +
+          'logo abaixo de cada número para você conferir a conta.'
       )
     );
-
-    var sugestoes = global.Bilhete.sugestoesDe(analise, 4);
-
-    if (!sugestoes.length) {
-      s.appendChild(U.vazio('Sem sugestão nesta partida', global.Bilhete.motivoListaVazia()));
-      return s;
-    }
-
-    var grade = criar('div.grade');
-    sugestoes.forEach(function (sug, i) {
-      grade.appendChild(global.Bilhete.montar(sug, ev, { destaque: i === 0, comLink: false }));
-    });
-    s.appendChild(grade);
-
-    return s;
+    aviso.appendChild(
+      criar(
+        'p',
+        'Não há previsão, probabilidade, odd nem indicação de aposta. ' +
+          'Retrospecto passado não determina resultado futuro — uma equipe com cinco vitórias ' +
+          'seguidas pode perder a próxima, e isso acontece o tempo todo.'
+      )
+    );
+    return aviso;
   }
 
-  /* ------------------------------------------ probabilidades ------ */
+  /* ----------------------------------------------- retrospecto ---- */
 
-  function secaoProbabilidades(ev, analise) {
+  function secaoRetrospecto(ev, comp) {
     var s = criar('section.secao');
-    s.appendChild(U.secao('Leitura do modelo', 'Probabilidade estimada para cada resultado.'));
-
-    var painel = criar('div.painel');
-    painel.appendChild(U.barraTripla(analise.probabilidades, ev.casa.nome, ev.fora.nome));
-
-    if (analise.usaPoisson) {
-      var metricas = criar('div.metricas');
-      metricas.style.marginTop = '18px';
-      metricas.appendChild(metrica(analise.lambdaCasa.toFixed(2), 'Gols esp. ' + U.abreviar(ev.casa.nome)));
-      metricas.appendChild(metrica(analise.lambdaFora.toFixed(2), 'Gols esp. ' + U.abreviar(ev.fora.nome)));
-      metricas.appendChild(metrica((analise.lambdaCasa + analise.lambdaFora).toFixed(2), 'Total esperado'));
-      metricas.appendChild(metrica(Math.round(analise.amostra * 100) + '%', 'Qualidade da amostra'));
-      painel.appendChild(metricas);
-    }
-
-    s.appendChild(painel);
-
-    /* placares mais provaveis */
-    if (analise.placaresProvaveis.length) {
-      var p2 = criar('div.painel');
-      p2.style.marginTop = '12px';
-      p2.appendChild(criar('h3.painel-titulo', 'Placares mais prováveis'));
-
-      var caixa = criar('div.tabela-caixa');
-      var t = criar('table.tabela');
-
-      var thead = criar('thead');
-      var tr = criar('tr');
-      ['Placar', 'Probabilidade', 'Odd justa'].forEach(function (h) {
-        tr.appendChild(criar('th', h));
-      });
-      thead.appendChild(tr);
-      t.appendChild(thead);
-
-      var tbody = criar('tbody');
-      analise.placaresProvaveis.forEach(function (pl) {
-        var linha = criar('tr');
-        linha.appendChild(criar('td.num', pl.casa + ' – ' + pl.fora));
-        linha.appendChild(criar('td.num', (pl.p * 100).toFixed(1).replace('.', ',') + '%'));
-        linha.appendChild(criar('td.num', global.Bilhete.formatarOdd(1 / pl.p)));
-        tbody.appendChild(linha);
-      });
-      t.appendChild(tbody);
-
-      caixa.appendChild(t);
-      p2.appendChild(caixa);
-      s.appendChild(p2);
-    }
-
-    return s;
-  }
-
-  function metrica(valor, rotulo) {
-    var m = criar('div.metrica');
-    m.appendChild(criar('div.metrica-valor', valor));
-    m.appendChild(criar('div.metrica-rotulo', rotulo));
-    return m;
-  }
-
-  /* ------------------------------------------------- forma -------- */
-
-  function secaoForma(ev, analise) {
-    var s = criar('section.secao');
-    s.appendChild(U.secao('Forma recente', 'Os últimos jogos de cada equipe, do mais antigo para o mais novo.'));
+    s.appendChild(
+      U.secao('Retrospecto recente', 'Os últimos jogos de cada equipe registrados na API.')
+    );
 
     var colunas = criar('div.duas-colunas');
-    colunas.appendChild(painelForma(ev.casa, analise.formaCasa, analise.golsCasa));
-    colunas.appendChild(painelForma(ev.fora, analise.formaFora, analise.golsFora));
+    colunas.appendChild(painelRetrospecto(ev.casa, comp.retrospectoCasa));
+    colunas.appendChild(painelRetrospecto(ev.fora, comp.retrospectoFora));
     s.appendChild(colunas);
 
     return s;
   }
 
-  function painelForma(time, forma, gols) {
+  function painelRetrospecto(time, r) {
     var p = criar('div.painel');
 
-    var topo = criar('div');
-    topo.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px';
+    var topo = criar('div.painel-topo');
     topo.appendChild(U.escudo(time.escudo, time.nome, 36));
     topo.appendChild(criar('strong', time.nome || '—'));
     p.appendChild(topo);
 
-    if (!forma.quantidade) {
-      p.appendChild(
-        criar('p.estado-texto', 'A API não devolveu jogos anteriores com placar para esta equipe.')
-      );
+    if (!r.quantidade) {
+      p.appendChild(criar('p.estado-texto', r.resumo));
       return p;
     }
 
-    p.appendChild(U.tiraDeForma(forma.sequencia));
+    /* A frase em texto vem antes das bolinhas: é ela que a pessoa lê. */
+    p.appendChild(criar('p.resumo-frase', r.resumo));
+    p.appendChild(U.tiraDeForma(r.sequencia));
 
     var m = criar('div.metricas');
     m.style.marginTop = '14px';
-    m.appendChild(metrica(forma.aproveitamento + '%', 'Aproveitamento'));
-    m.appendChild(metrica(forma.vitorias + '-' + forma.empates + '-' + forma.derrotas, 'V-E-D'));
-    m.appendChild(metrica(forma.mediaPro.toFixed(1).replace('.', ','), 'Gols/jogo'));
-    m.appendChild(metrica(forma.mediaContra.toFixed(1).replace('.', ','), 'Sofridos/jogo'));
+    m.appendChild(metrica(r.vitorias + '-' + r.empates + '-' + r.derrotas, 'V-E-D'));
+    m.appendChild(metrica(String(r.golsPro), 'Gols feitos'));
+    m.appendChild(metrica(String(r.golsContra), 'Gols sofridos'));
+    m.appendChild(metrica(String(r.golsPro - r.golsContra), 'Saldo'));
     p.appendChild(m);
 
-    if (gols && gols.jogosCasa && gols.jogosFora) {
-      var detalhes = criar('div');
-      detalhes.style.marginTop = '12px';
-      detalhes.appendChild(
-        U.linhaDado(
-          'Em casa',
-          gols.casaPro.toFixed(1).replace('.', ',') + ' feitos / ' +
-            gols.casaContra.toFixed(1).replace('.', ',') + ' sofridos'
-        )
-      );
-      detalhes.appendChild(
-        U.linhaDado(
-          'Fora',
-          gols.foraPro.toFixed(1).replace('.', ',') + ' feitos / ' +
-            gols.foraContra.toFixed(1).replace('.', ',') + ' sofridos'
-        )
-      );
-      p.appendChild(detalhes);
-    }
-
-    /* lista dos jogos */
-    var lista = criar('div');
-    lista.style.marginTop = '12px';
-    forma.jogos.forEach(function (j) {
-      var e = j.evento;
+    /* A lista que permite conferir a contagem acima. */
+    var lista = criar('div.lista-jogos');
+    r.jogos.forEach(function (j) {
       var linha = criar('div.dado');
 
-      var esq = criar('span.dado-rotulo');
-      esq.textContent = (e.casa.nome === time.nome ? e.fora.nome : e.casa.nome) + (j.emCasa ? ' (casa)' : ' (fora)');
+      var esq = criar('span.dado-rotulo', j.adversario + (j.emCasa ? ' (casa)' : ' (fora)'));
       linha.appendChild(esq);
 
-      var dir = criar('span.dado-valor');
-      dir.textContent = j.golsPro + '–' + j.golsContra;
+      var dir = criar('span.dado-valor', j.golsPro + '–' + j.golsContra);
       dir.className += j.resultado === 'V' ? ' destaque-v' : j.resultado === 'D' ? ' destaque-d' : '';
       linha.appendChild(dir);
 
@@ -321,39 +216,85 @@
     return p;
   }
 
-  /* --------------------------------------------- confrontos ------- */
+  /* ----------------------------------------------- gols ----------- */
 
-  function secaoConfrontos(ev, analise, metodo) {
+  function secaoGols(ev, comp) {
+    if (!comp.golsCasa && !comp.golsFora) return criar('span');
+
     var s = criar('section.secao');
-    var h2h = analise.confrontos;
-
     s.appendChild(
-      U.secao(
-        'Confrontos diretos',
-        h2h.quantidade
-          ? 'Os últimos ' + h2h.quantidade + ' jogos entre as duas equipes na base da TheSportsDB.'
-          : 'Histórico entre as duas equipes.'
+      U.secao('Média de gols por mando', 'Média simples dos jogos listados acima, separando casa de fora.')
+    );
+
+    var painel = criar('div.painel');
+    var caixa = criar('div.tabela-caixa');
+    var t = criar('table.tabela');
+
+    var thead = criar('thead');
+    var tr = criar('tr');
+    ['', ev.casa.nome, ev.fora.nome].forEach(function (h) {
+      tr.appendChild(criar('th', h));
+    });
+    thead.appendChild(tr);
+    t.appendChild(thead);
+
+    var tbody = criar('tbody');
+    [
+      ['Marcados em casa', 'casaPro'],
+      ['Sofridos em casa', 'casaContra'],
+      ['Marcados fora', 'foraPro'],
+      ['Sofridos fora', 'foraContra'],
+    ].forEach(function (par) {
+      var linha = criar('tr');
+      linha.appendChild(criar('td', par[0]));
+      linha.appendChild(criar('td.num', valorGol(comp.golsCasa, par[1])));
+      linha.appendChild(criar('td.num', valorGol(comp.golsFora, par[1])));
+      tbody.appendChild(linha);
+    });
+    t.appendChild(tbody);
+
+    caixa.appendChild(t);
+    painel.appendChild(caixa);
+
+    painel.appendChild(
+      criar(
+        'p.bilhete-nota',
+        'Onde aparece um traço, a equipe não tem nenhum jogo daquele tipo entre os ' +
+          'listados acima — e sem jogo não existe média.'
       )
     );
 
+    s.appendChild(painel);
+    return s;
+  }
+
+  function valorGol(gols, campo) {
+    if (!gols || gols[campo] === null || gols[campo] === undefined) return '—';
+    return gols[campo].toFixed(1).replace('.', ',');
+  }
+
+  /* ----------------------------------------------- confrontos ----- */
+
+  function secaoConfrontos(ev, comp, metodo) {
+    var s = criar('section.secao');
+    var h2h = comp.confrontos;
+
+    s.appendChild(U.secao('Confrontos diretos'));
+
     if (!h2h.quantidade) {
-      s.appendChild(
-        U.vazio(
-          'Sem histórico disponível',
-          'A API não retornou confrontos anteriores entre ' + ev.casa.nome + ' e ' + ev.fora.nome +
-            '. O modelo redistribuiu esse peso para a forma recente e para as médias de gols.'
-        )
-      );
+      s.appendChild(U.vazio('Sem histórico disponível', h2h.resumo));
       return s;
     }
 
     var painel = criar('div.painel');
+    painel.appendChild(criar('p.resumo-frase', h2h.resumo));
 
     var m = criar('div.metricas');
+    m.style.marginTop = '12px';
     m.appendChild(metrica(String(h2h.vitoriasCasa), 'Vit. ' + U.abreviar(ev.casa.nome)));
     m.appendChild(metrica(String(h2h.empates), 'Empates'));
     m.appendChild(metrica(String(h2h.vitoriasFora), 'Vit. ' + U.abreviar(ev.fora.nome)));
-    m.appendChild(metrica(h2h.mediaGols.toFixed(1).replace('.', ','), 'Gols/jogo'));
+    m.appendChild(metrica(h2h.golsCasa + '–' + h2h.golsFora, 'Gols no total'));
     painel.appendChild(m);
 
     var caixa = criar('div.tabela-caixa');
@@ -387,8 +328,8 @@
       painel.appendChild(
         criar(
           'p.bilhete-nota',
-          'A busca direta não retornou resultados; estes confrontos foram encontrados ' +
-            'cruzando os últimos jogos das duas equipes, então o histórico pode estar incompleto.'
+          'A busca direta não retornou resultados; estes confrontos foram encontrados cruzando ' +
+            'os últimos jogos das duas equipes, então o histórico pode estar incompleto.'
         )
       );
     }
@@ -397,9 +338,9 @@
     return s;
   }
 
-  /* ------------------------------------------ estatisticas -------- */
+  /* ----------------------------------------------- ficha ---------- */
 
-  function secaoEstatisticas(ev, analise) {
+  function secaoFicha(ev) {
     var s = criar('section.secao');
     s.appendChild(U.secao('Ficha da partida'));
 
@@ -414,51 +355,11 @@
       ['Esporte', ev.esporte],
       ['Status', ev.adiado ? 'Adiado' : ev.aoVivo ? 'Em andamento' : ev.encerrado ? 'Encerrado' : 'A realizar'],
     ].forEach(function (par) {
-      var linha = U.linhaDado(par[0], par[1]);
-      if (linha) painel.appendChild(linha);
+      var l = U.linhaDado(par[0], par[1]);
+      if (l) painel.appendChild(l);
     });
 
     s.appendChild(painel);
-    return s;
-  }
-
-  /* ---------------------------------------------- como ler -------- */
-
-  function secaoComoLer(analise) {
-    var s = criar('section.secao');
-
-    var aviso = criar('div.aviso-modelo');
-    aviso.appendChild(criar('h3', 'Como ler estes números'));
-
-    aviso.appendChild(
-      criar(
-        'p',
-        'O índice de confiança é a probabilidade do modelo ajustada pelo tamanho da amostra. ' +
-          'Aqui ele trabalhou com ' + analise.formaCasa.quantidade + ' e ' + analise.formaFora.quantidade +
-          ' jogos recentes e ' + analise.confrontos.quantidade + ' confrontos diretos — ' +
-          'qualidade de amostra de ' + Math.round(analise.amostra * 100) + '%.'
-      )
-    );
-
-    aviso.appendChild(
-      criar(
-        'p',
-        'A odd justa é o inverso da probabilidade. Compare com a odd da casa: se a casa paga MAIS que ' +
-          'a justa, o preço está do seu lado; se paga menos, a vantagem é dela.'
-      )
-    );
-
-    aviso.appendChild(
-      criar(
-        'p',
-        'O que o modelo NÃO sabe: lesão, suspensão, time reserva, mudança de técnico, ' +
-          'clima, arbitragem e sorte. Isso decide muita partida. Por isso o teto do índice é ' +
-          C.modelo.confiancaMaxima + '% — não existe aposta de 100%, e quem te promete isso ' +
-          'está vendendo alguma coisa.'
-      )
-    );
-
-    s.appendChild(aviso);
     return s;
   }
 
@@ -466,23 +367,29 @@
      AUXILIARES
      ================================================================ */
 
+  function metrica(valor, rotulo) {
+    var m = criar('div.metrica');
+    m.appendChild(criar('div.metrica-valor', valor));
+    m.appendChild(criar('div.metrica-rotulo', rotulo));
+    return m;
+  }
+
   function esqueletoInicial() {
     var caixa = criar('div');
     caixa.appendChild(criar('div.esqueleto.esqueleto-alto'));
-    var g = criar('div.grade');
+    var g = criar('div.duas-colunas');
     g.style.marginTop = '14px';
-    for (var i = 0; i < 4; i++) g.appendChild(criar('div.esqueleto'));
+    g.appendChild(criar('div.esqueleto.esqueleto-alto'));
+    g.appendChild(criar('div.esqueleto.esqueleto-alto'));
     caixa.appendChild(g);
     return caixa;
   }
 
   function mostrarErro(titulo, detalhe, aoTentar) {
     U.limpar(conteudo);
-    var e = U.erro(detalhe || titulo, aoTentar);
-    conteudo.appendChild(e);
+    conteudo.appendChild(U.erro(detalhe || titulo, aoTentar));
 
-    var voltar = criar('p');
-    voltar.style.cssText = 'text-align:center;margin-top:16px';
+    var voltar = criar('p.centralizado');
     voltar.appendChild(criar('a.btn.btn-contorno', { href: 'index.html' }, 'Voltar para os jogos'));
     conteudo.appendChild(voltar);
   }

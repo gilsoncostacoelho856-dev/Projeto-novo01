@@ -1,6 +1,6 @@
 # Placar Analítico
 
-Site de análise estatística esportiva em **HTML, CSS e JavaScript puro**. Sem framework, sem build, sem
+Site de consulta de jogos, times e resultados esportivos em **HTML, CSS e JavaScript puro**. Sem framework, sem build, sem
 `npm install`. É só abrir o arquivo no navegador ou jogar a pasta em qualquer hospedagem.
 
 Os dados vêm da [TheSportsDB](https://www.thesportsdb.com/api.php).
@@ -12,9 +12,8 @@ Os dados vêm da [TheSportsDB](https://www.thesportsdb.com/api.php).
 | Página | Arquivo | O que tem |
 |---|---|---|
 | Jogos | `index.html` | Próximos jogos, jogos ao vivo, filtros por esporte / competição / data |
-| Análise da partida | `analise.html` | Confrontos diretos, forma recente dos dois times, probabilidades e sugestões |
-| Apostas do dia | `apostas.html` | Analisa os jogos do dia e ordena as seleções por índice de confiança |
-| Time | `time.html` | Ficha, forma recente, elenco, últimos resultados, próximos jogos |
+| Comparação | `analise.html` | Confrontos diretos e retrospecto recente das duas equipes |
+| Time | `time.html` | Ficha, retrospecto recente, elenco, últimos resultados, próximos jogos |
 | Jogador | `jogador.html` | Ficha completa do atleta |
 | Times | `times.html` | Busca por nome ou por competição |
 
@@ -23,29 +22,30 @@ automobilismo, vôlei, rúgbi, handebol e eSports). A lista fica em `js/config.j
 
 ---
 
-## ⚠️ Antes de qualquer coisa: o que este site NÃO faz
+## ⚠️ O que este site NÃO faz
 
-**Ele não acerta 90% a 100% das apostas. Nenhum site acerta, e quem promete isso está mentindo.**
+**Ele não indica apostas, não calcula probabilidade e não exibe odd.** Mostra o que a TheSportsDB
+registrou: quem jogou, quando, qual foi o placar, e a contagem desses placares.
 
-Se um modelo estatístico tivesse esse acerto, as casas de apostas teriam quebrado há muito tempo. O que
-existe de verdade neste projeto é um **índice de confiança**: a probabilidade calculada por um modelo,
-ajustada pela quantidade de dados disponíveis e limitada a um teto (padrão: 92%). Esse teto está em
-`js/config.js` e foi posto de propósito — sempre existe zebra, lesão, expulsão e time reserva, e nada
-disso entra em conta nenhuma.
+Uma versão anterior deste site calculava probabilidade por distribuição de Poisson, derivava uma "odd
+justa" (1 ÷ probabilidade) e exibia um "índice de confiança". A matemática era real e os dados também —
+mas **o modelo nunca foi calibrado**: ninguém jamais verificou se aquilo que ele chamava de 62%
+acontecia 62% das vezes. Os pesos eram escolhidos no olho, a amostra era de 5 jogos, e o índice de
+confiança era uma fórmula sem respaldo em método publicado.
 
-O número grande no bilhete (`1,46`) também **não é a odd da bet365 nem de nenhuma casa**. A TheSportsDB não
-fornece odds. Aquilo é a **odd justa** do modelo: o inverso da probabilidade calculada.
+Número não calibrado, exibido com casa decimal, ao lado do nome de um time, empresta uma autoridade que
+ele não tem. Quem lê pode perder dinheiro de verdade por causa disso. Por isso saiu.
 
-**É assim que você usa:**
+### Se você quiser projeção de volta um dia
 
-| Situação | O que significa |
-|---|---|
-| Casa paga **acima** da odd justa | O preço está a seu favor — é o que se chama aposta de valor |
-| Casa paga **abaixo** da odd justa | A vantagem é da casa |
+O caminho honesto tem três etapas, nesta ordem:
 
-Ou seja: o site não te diz em que apostar. Ele te dá uma referência de preço para você comparar com a casa.
+1. **Fonte com histórico longo** — temporadas inteiras, não os 5 jogos que a chave gratuita devolve.
+2. **Backtest** — rodar o modelo sobre jogos passados e medir se as previsões bateram com o que
+   aconteceu. Sem isso, qualquer percentual é opinião formatada como número.
+3. **Só então exibir** — e exibindo junto o resultado do backtest, para o leitor saber o que o número vale.
 
----
+Pular a etapa 2 é o que transforma estatística em adivinhação com aparência de ciência.
 
 ## Como rodar no seu computador
 
@@ -173,52 +173,36 @@ serviço. Tanto Vercel quanto Netlify emitem o certificado HTTPS de graça e soz
 
 ---
 
-## Como o modelo funciona
+## Como as contagens funcionam
 
-Está todo em `js/modelo.js`, comentado em português.
+Está tudo em `js/estatisticas.js`, e é aritmética simples de propósito — você consegue conferir na mão.
 
-1. **Forma recente** — os últimos 5 jogos viram pontos (V=3, E=1, D=0), com o jogo mais recente pesando
-   mais que o mais antigo.
-2. **Confrontos diretos** — o mesmo cálculo, mas só nos jogos entre as duas equipes.
-3. **Ataque e defesa** — média de gols feitos e sofridos, separando jogos em casa de jogos fora.
-4. **Poisson** — com essas médias, o modelo estima os gols esperados de cada lado e monta uma matriz com a
-   probabilidade de cada placar (de 0×0 até 8×8). Somar as células certas dá a probabilidade de qualquer
-   mercado. É o mesmo ponto de partida que as casas de apostas usam.
-5. **Índice de confiança** — a probabilidade, puxada na direção de 50% conforme a amostra é pequena. Cinco
-   jogos é pouca informação, e o número reflete isso em vez de fingir certeza.
+- **Retrospecto recente** — conta vitórias, empates e derrotas nos últimos jogos com placar registrado.
+  Sem peso por antiguidade: um jogo é um jogo. Vira a frase que aparece na tela, do tipo
+  *"Palmeiras venceu 1, empatou 1 e perdeu 3 dos últimos 5 jogos."*
+- **Gols por mando** — média simples de gols feitos e sofridos, separando jogos em casa de jogos fora.
+  Quando não há nenhum jogo de um dos tipos, mostra um traço em vez de repetir a média geral: sem jogo
+  não existe média.
+- **Confrontos diretos** — conta o histórico entre as duas equipes. Como o mandante muda a cada
+  confronto, o placar é lido do ponto de vista da equipe certa, senão a contagem sairia errada nos jogos
+  disputados no campo do adversário.
 
-### Sobre as combinações "Criar Aposta"
+Em toda página, a **lista dos jogos usados fica logo abaixo da contagem**. Isso é intencional: é o que
+permite conferir se o número está certo, em vez de ter que confiar nele.
 
-Quando o site junta duas seleções do mesmo jogo, ele **não multiplica as odds**. Multiplicar trataria
-"Flamengo vence" e "mais de 2,5 gols" como eventos independentes — e eles não são: um time que vence
-tende a marcar mais. Como a matriz de placares já tem a probabilidade de cada resultado, o site soma
-exatamente as células onde as duas condições acontecem juntas.
+Não existe campo "favorito", "chance" ou "indicação" em lugar nenhum. A leitura de quem está melhor fica
+com quem olha a tabela — que é onde ela deve ficar.
 
-Na prática, num exemplo real do projeto: multiplicação ingênua daria odd **1,54**; a probabilidade
-conjunta correta dá **1,46**. Quem multiplica está superestimando o próprio retorno.
+### Ajustando
 
-O modelo também descarta combinações onde uma seleção já está contida na outra (por exemplo "Flamengo
-vence" + "Flamengo marca" — vencer já obriga marcar). A casa não paga nada a mais por isso.
-
-### Mexendo nos parâmetros
-
-Tudo em `js/config.js`:
+Em `js/config.js`:
 
 ```js
-modelo: {
-  pesos: { forma: 0.45, confrontos: 0.28, gols: 0.27 },  // precisa somar 1
-  fatorCasa: 1.12,          // 1.12 = mandante ganha 12% de força
-  confiancaMaxima: 92,      // teto do índice
-  confiancaMinima: 55,      // abaixo disso não sugere
-  maxJogosAnalisados: 12,   // suba só com plano pago: cada jogo custa ~3 chamadas
-},
-apostas: {
-  oddMinima: 1.30,          // corta as sugestões óbvias demais
-  maxPernasCombo: 3,
+estatisticas: {
+  janelaJogos: 5,        // quantos jogos entram no retrospecto
+  janelaConfrontos: 10,  // quantos confrontos diretos a tabela mostra
 },
 ```
-
----
 
 ## Requisitos de responsabilidade (não remova)
 
@@ -244,26 +228,24 @@ prometer índice de acerto garantido é propaganda enganosa pelo Código de Defe
 ```
 esportes/
 ├── index.html            Jogos do dia + ao vivo
-├── analise.html          Análise de uma partida
-├── apostas.html          Apostas do dia
+├── analise.html          Comparação entre as duas equipes
 ├── time.html             Detalhes do time
 ├── jogador.html          Detalhes do jogador
 ├── times.html            Busca de times
 │
 ├── css/
 │   ├── base.css          Cores, layout, cabeçalho, rodapé, portão 18+
-│   └── componentes.css   Cards, bilhetes, barras, tabelas, estados
+│   └── componentes.css   Cards, painéis, tabelas, estados
 │
 ├── js/
 │   ├── config.js         ⭐ CHAVE DA API e todos os ajustes
 │   ├── cache.js          Cache com validade (não estoura o limite grátis)
 │   ├── api.js            Camada da TheSportsDB: fila, timeout, normalização
-│   ├── modelo.js         Poisson, forma, confrontos, combinações
+│   ├── estatisticas.js   Contagens factuais: retrospecto, gols, confrontos
 │   ├── ui.js             Criação de elementos, datas, cards, estados
-│   ├── bilhete.js        O bilhete de aposta
 │   ├── layout.js         Cabeçalho, rodapé e o portão 18+
-│   ├── home.js           · apostas.js · analise.js
-│   └── time.js           · jogador.js  · times.js
+│   ├── home.js           · analise.js
+│   └── time.js           · jogador.js · times.js
 │
 ├── api/
 │   └── proxy.js          Proxy serverless opcional (Vercel)
@@ -304,18 +286,20 @@ círculo com as iniciais do time no lugar.
 
 Para você não perder tempo procurando o que não existe:
 
-- **Não há odds.** Nenhuma. A odd mostrada é sempre calculada pelo modelo.
+- **Não há odds.** Nenhuma, em lugar nenhum da API — e o site não inventa nenhuma.
 - **Não há estatística individual de jogador** (gols na temporada, assistências, minutos) na chave
   gratuita. A TheSportsDB é um banco de fichas, não de desempenho.
 - **Não há chutes, escanteios, posse de bola ou cartões.** Então mercados do tipo "mais de 5,5 chutes no
   primeiro tempo" são impossíveis com esta fonte — precisaria de outra API (Sportmonks, API-Football,
   Opta), todas pagas.
-- **Cobertura irregular fora do futebol.** MMA e eSports costumam vir com menos dados históricos, e o
-  modelo avisa quando a amostra é pequena.
+- **Cobertura irregular fora do futebol.** MMA e eSports costumam vir com menos dados históricos; onde
+  não há jogo registrado, a página diz isso em vez de mostrar zero.
+- **Só 5 jogos por equipe** na chave gratuita. É pouco para qualquer conclusão forte, e é exatamente por
+  isso que o site se limita a contar em vez de projetar.
 
 ---
 
 ## Licença e uso
 
-Projeto de uso informativo e educacional. Não aceita apostas, não intermedeia pagamento e não vende
-palpite. Os dados são da TheSportsDB, sujeitos aos termos de uso dela.
+Projeto de uso informativo e educacional. Não aceita apostas, não intermedeia pagamento, não vende
+palpite e não indica em que apostar. Os dados são da TheSportsDB, sujeitos aos termos de uso dela.

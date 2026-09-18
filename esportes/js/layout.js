@@ -71,14 +71,14 @@
     caixa.appendChild(
       criar(
         'p.portao-texto',
-        C.ui.nomeSite + ' reúne estatística esportiva e leitura de probabilidade para maiores de idade. ' +
-          'Apostar é proibido para menores de 18 anos no Brasil.'
+        C.ui.nomeSite + ' reúne dados e resultados esportivos. O conteúdo é informativo e destinado a ' +
+          'maiores de idade. Apostar é proibido para menores de 18 anos no Brasil.'
       )
     );
 
     var lista = criar('ul.portao-lista');
     [
-      'As projeções aqui são estatística, não garantia de resultado.',
+      'O site mostra resultados passados. Não há previsão nem indicação de aposta.',
       'Aposte apenas o que você pode perder por completo.',
       'Aposta não é fonte de renda nem solução para dívida.',
     ].forEach(function (t) {
@@ -180,7 +180,6 @@
 
   var MENU = [
     { href: 'index.html', rotulo: 'Jogos', pagina: 'home' },
-    { href: 'apostas.html', rotulo: 'Apostas do dia', pagina: 'apostas' },
     { href: 'times.html', rotulo: 'Times', pagina: 'times' },
   ];
 
@@ -236,8 +235,8 @@
     col1.appendChild(
       criar(
         'p.rodape-texto',
-        'Dados públicos da TheSportsDB somados a um modelo estatístico aberto. ' +
-          'Não vendemos palpite, não aceitamos aposta e não intermediamos pagamento.'
+        'Dados públicos da TheSportsDB, exibidos como vieram. Não calculamos probabilidade ' +
+          'nem odd, não vendemos palpite, não aceitamos aposta e não intermediamos pagamento.'
       )
     );
     interno.appendChild(col1);
@@ -249,7 +248,7 @@
     var pontos = criar('ul.rodape-lista');
     [
       'Proibido para menores de 18 anos.',
-      'Nenhuma análise garante resultado. Zebra existe.',
+      'Resultado passado não prevê jogo futuro. Zebra existe.',
       'Nunca aposte dinheiro de conta, dívida ou empréstimo.',
       'Perdeu? Não tente recuperar apostando mais.',
     ].forEach(function (t) {
@@ -301,7 +300,7 @@
     interno.appendChild(
       criar(
         'span.barra-texto',
-        'Aposte com responsabilidade. Nenhuma análise garante resultado — aposta pode causar dependência.'
+        'Conteúdo informativo: o site não indica apostas. Aposta pode causar dependência.'
       )
     );
 

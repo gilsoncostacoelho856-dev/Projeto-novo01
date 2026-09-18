@@ -167,38 +167,43 @@
     var alvo = U.$('#painel-forma');
     U.limpar(alvo);
 
-    var forma = global.Modelo.forma(eventos, time.id, time.nome);
-    var gols = global.Modelo.mediasGols(eventos, time.id, time.nome);
+    var retro = global.Estatisticas.retrospecto(eventos, time.id, time.nome);
+    var gols = global.Estatisticas.golsPorMando(eventos, time.id, time.nome);
 
     var p = criar('div.painel');
-    p.appendChild(criar('h2.painel-titulo', 'Forma recente'));
+    p.appendChild(criar('h2.painel-titulo', 'Retrospecto recente'));
 
-    if (!forma.quantidade) {
+    if (!retro.quantidade) {
       p.appendChild(criar('p.estado-texto', 'Sem jogos com placar na base para calcular a forma.'));
       alvo.appendChild(p);
       return;
     }
 
-    p.appendChild(U.tiraDeForma(forma.sequencia));
+    p.appendChild(criar('p.resumo-frase', retro.resumo));
+    p.appendChild(U.tiraDeForma(retro.sequencia));
 
     var m = criar('div.metricas');
     m.style.marginTop = '14px';
-    m.appendChild(metrica(forma.aproveitamento + '%', 'Aproveitamento'));
-    m.appendChild(metrica(forma.vitorias + '-' + forma.empates + '-' + forma.derrotas, 'V-E-D'));
-    m.appendChild(metrica(virgula(forma.mediaPro), 'Gols/jogo'));
-    m.appendChild(metrica(virgula(forma.mediaContra), 'Sofridos/jogo'));
+    m.appendChild(metrica(String(retro.golsPro), 'Gols feitos'));
+    m.appendChild(metrica(retro.vitorias + '-' + retro.empates + '-' + retro.derrotas, 'V-E-D'));
+    m.appendChild(metrica(String(retro.golsContra), 'Gols sofridos'));
+    m.appendChild(metrica(String(retro.golsPro - retro.golsContra), 'Saldo'));
     p.appendChild(m);
 
-    if (gols && gols.jogosCasa && gols.jogosFora) {
+    if (gols) {
       var det = criar('div');
       det.style.marginTop = '12px';
-      det.appendChild(
-        U.linhaDado('Como mandante', virgula(gols.casaPro) + ' feitos / ' + virgula(gols.casaContra) + ' sofridos')
-      );
-      det.appendChild(
-        U.linhaDado('Como visitante', virgula(gols.foraPro) + ' feitos / ' + virgula(gols.foraContra) + ' sofridos')
-      );
-      p.appendChild(det);
+      if (gols.jogosCasa) {
+        det.appendChild(
+          U.linhaDado('Como mandante', virgula(gols.casaPro) + ' feitos / ' + virgula(gols.casaContra) + ' sofridos')
+        );
+      }
+      if (gols.jogosFora) {
+        det.appendChild(
+          U.linhaDado('Como visitante', virgula(gols.foraPro) + ' feitos / ' + virgula(gols.foraContra) + ' sofridos')
+        );
+      }
+      if (det.children.length) p.appendChild(det);
     }
 
     alvo.appendChild(p);
