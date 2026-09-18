@@ -298,7 +298,7 @@
       var link = criar(
         'a.btn.btn-mini',
         { href: 'analise.html?evento=' + encodeURIComponent(ev.id) },
-        'Ver análise'
+        'Comparar equipes'
       );
       pe.appendChild(link);
     }
@@ -359,57 +359,6 @@
       });
 
     return caixa;
-  }
-
-  /* ================================================================
-     BARRA DE CONFIANCA
-     ================================================================ */
-
-  function barraConfianca(valor, nivel) {
-    var caixa = criar('div.barra');
-    var trilho = criar('div.barra-trilho');
-    var preenchido = criar('div.barra-preenchida' + (nivel ? '.nivel-' + nivel : ''));
-    preenchido.style.width = Math.max(2, Math.min(100, valor)) + '%';
-    trilho.appendChild(preenchido);
-    caixa.appendChild(trilho);
-    caixa.appendChild(criar('span.barra-valor', valor.toFixed(1).replace('.', ',') + '%'));
-    return caixa;
-  }
-
-  /** Barra de tres fatias: casa / empate / fora. */
-  function barraTripla(prob, nomeCasa, nomeFora) {
-    var caixa = criar('div.tripla');
-
-    var barra = criar('div.tripla-barra');
-    var fatias = [
-      { classe: 'casa', v: prob.casa },
-      { classe: 'empate', v: prob.empate },
-      { classe: 'fora', v: prob.fora },
-    ];
-    fatias.forEach(function (f) {
-      if (f.v <= 0) return;
-      var d = criar('div.tripla-fatia.fatia-' + f.classe);
-      d.style.width = (f.v * 100).toFixed(1) + '%';
-      d.title = (f.v * 100).toFixed(1) + '%';
-      barra.appendChild(d);
-    });
-    caixa.appendChild(barra);
-
-    var legenda = criar('div.tripla-legenda');
-    legenda.appendChild(itemLegenda('casa', nomeCasa, prob.casa));
-    if (prob.empate > 0.005) legenda.appendChild(itemLegenda('empate', 'Empate', prob.empate));
-    legenda.appendChild(itemLegenda('fora', nomeFora, prob.fora));
-    caixa.appendChild(legenda);
-
-    return caixa;
-  }
-
-  function itemLegenda(classe, nome, valor) {
-    var i = criar('div.legenda-item');
-    i.appendChild(criar('span.legenda-cor.cor-' + classe));
-    i.appendChild(criar('span.legenda-nome', nome || ''));
-    i.appendChild(criar('strong.legenda-valor', (valor * 100).toFixed(0) + '%'));
-    return i;
   }
 
   /* ================================================================
@@ -511,8 +460,6 @@
 
     cardJogo: cardJogo,
     tiraDeForma: tiraDeForma,
-    barraConfianca: barraConfianca,
-    barraTripla: barraTripla,
 
     traduzirPosicao: traduzirPosicao,
     parametro: parametro,

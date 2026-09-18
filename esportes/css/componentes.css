@@ -1,7 +1,7 @@
 /* =====================================================================
    COMPONENTES
-   Cards de partida, escudos, tira de forma, barras de probabilidade,
-   bilhete de aposta, tabelas, esqueletos e estados de tela.
+   Cards de partida, escudos, tira de resultados, paineis, tabelas,
+   esqueletos e estados de tela.
    ===================================================================== */
 
 /* ================================================================
@@ -262,330 +262,47 @@
 }
 
 /* ================================================================
-   BARRAS DE PROBABILIDADE
+   PAINEIS E DADOS
    ================================================================ */
 
-.barra {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.barra-trilho {
-  flex: 1;
-  height: 7px;
-  border-radius: 4px;
-  background: var(--superficie-3);
-  overflow: hidden;
-  min-width: 60px;
-}
-
-.barra-preenchida {
-  height: 100%;
-  border-radius: 4px;
-  background: var(--verde);
-  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.3, 1);
-}
-
-.barra-preenchida.nivel-alta {
-  background: var(--verde);
-}
-
-.barra-preenchida.nivel-media {
-  background: var(--amarelo);
-}
-
-.barra-preenchida.nivel-baixa {
-  background: var(--vermelho);
-}
-
-.barra-valor {
-  font-family: var(--fonte-num);
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--texto-medio);
-  min-width: 46px;
-  text-align: right;
-}
-
-/* --- barra de tres fatias (casa / empate / fora) --- */
-
-.tripla-barra {
-  display: flex;
-  height: 10px;
-  border-radius: 5px;
-  overflow: hidden;
-  background: var(--superficie-3);
-  margin-bottom: 10px;
-}
-
-.tripla-fatia {
-  height: 100%;
-  transition: width 0.5s ease;
-}
-
-.fatia-casa {
-  background: var(--verde);
-}
-
-.fatia-empate {
-  background: var(--texto-fraco);
-}
-
-.fatia-fora {
-  background: var(--azul);
-}
-
-.tripla-legenda {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-}
-
-.legenda-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  min-width: 0;
-}
-
-.legenda-cor {
-  width: 9px;
-  height: 9px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.cor-casa {
-  background: var(--verde);
-}
-
-.cor-empate {
-  background: var(--texto-fraco);
-}
-
-.cor-fora {
-  background: var(--azul);
-}
-
-.legenda-nome {
-  color: var(--texto-fraco);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.legenda-valor {
-  font-family: var(--fonte-num);
-  color: var(--texto);
-}
-
-/* ================================================================
-   BILHETE DE APOSTA  ("Criar Aposta")
-   O visual e inspirado na tela de bilhete das casas de aposta, para
-   voce bater o olho e conferir contra a odd real.
-   ================================================================ */
-
-.bilhete {
-  background: var(--superficie);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  overflow: hidden;
-}
-
-.bilhete.destaque {
-  border-color: var(--verde-borda);
-  box-shadow: 0 0 0 1px var(--verde-fundo), var(--sombra);
-}
-
-.bilhete-topo {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--borda);
-  background: var(--preto);
-}
-
-.bilhete-tipo {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: var(--verde);
-  text-transform: uppercase;
-}
-
-.bilhete-tipo.simples {
-  color: var(--texto-medio);
-}
-
-.bilhete-odd {
-  margin-left: auto;
-  font-family: var(--fonte-num);
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--texto);
-  letter-spacing: -0.02em;
-}
-
-/* --- as pernas da combinacao, com o fio ligando --- */
-
-.bilhete-pernas {
-  list-style: none;
-  padding: 6px 14px 10px;
-}
-
-.perna {
-  position: relative;
-  padding: 10px 0 10px 22px;
-}
-
-.perna::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 16px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  border: 2px solid var(--texto-fraco);
-  background: var(--superficie);
-}
-
-/* fio vertical entre uma perna e a seguinte */
-.perna:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 27px;
-  bottom: -8px;
-  width: 1px;
-  background: var(--borda-clara);
-}
-
-.perna-titulo {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.perna-mercado {
-  font-size: 11.5px;
-  color: var(--texto-fraco);
-  margin-top: 2px;
-}
-
-.perna-odd {
-  font-family: var(--fonte-num);
-  font-size: 12px;
-  color: var(--texto-medio);
-  margin-top: 3px;
-}
-
-.bilhete-jogo {
-  padding: 11px 14px;
-  border-top: 1px solid var(--borda);
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.bilhete-jogo-nome {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--texto-medio);
-}
-
-.bilhete-jogo-hora {
-  font-size: 11.5px;
-  color: var(--texto-fraco);
-  margin-top: 2px;
-}
-
-.bilhete-rodape {
-  padding: 12px 14px;
-  border-top: 1px solid var(--borda);
-}
-
-.bilhete-linha {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.bilhete-rotulo {
-  font-size: 11.5px;
-  color: var(--texto-fraco);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
+/* Nota em letra miuda no pe de um painel. */
 .bilhete-nota {
   font-size: 12px;
   color: var(--texto-fraco);
   line-height: 1.5;
   border-top: 1px dashed var(--borda);
   padding-top: 9px;
-  margin-top: 9px;
+  margin-top: 11px;
 }
 
-/* --- a regra de valor: so vale se a casa pagar mais que a justa --- */
-
-.valor-dica {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 9px 11px;
-  border-radius: var(--raio-p);
-  background: var(--verde-fundo);
-  border: 1px solid var(--verde-borda);
-  font-size: 12px;
-  color: var(--texto-medio);
+/* A frase em texto que resume a contagem — "X venceu 3 dos ultimos 5".
+   Fica antes dos numeros porque e ela que a pessoa realmente le. */
+.resumo-frase {
+  font-size: 13.5px;
+  color: var(--texto);
   line-height: 1.5;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--preto);
+  border-left: 3px solid var(--verde);
+  border-radius: 0 var(--raio-p) var(--raio-p) 0;
 }
 
-.valor-dica strong {
-  color: var(--verde);
-  font-family: var(--fonte-num);
+.painel-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-/* ================================================================
-   ETIQUETAS DE NIVEL
-   ================================================================ */
-
-.etiqueta {
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  flex-shrink: 0;
+.lista-jogos {
+  margin-top: 12px;
 }
 
-.etiqueta.alta {
-  background: var(--verde-fundo);
-  color: var(--verde);
-  border: 1px solid var(--verde-borda);
+.centralizado {
+  text-align: center;
+  margin-top: 16px;
 }
-
-.etiqueta.media {
-  background: var(--amarelo-fundo);
-  color: var(--amarelo);
-  border: 1px solid rgba(255, 197, 61, 0.3);
-}
-
-.etiqueta.baixa {
-  background: var(--vermelho-fundo);
-  color: var(--vermelho);
-  border: 1px solid rgba(255, 95, 87, 0.3);
-}
-
-/* ================================================================
-   PAINEIS E DADOS
-   ================================================================ */
 
 .painel {
   background: var(--superficie);
